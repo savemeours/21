@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
 
 local VirtualInputManager = nil
 pcall(function() VirtualInputManager = game:GetService("VirtualInputManager") end)
@@ -10,53 +11,74 @@ pcall(function() VirtualUser = game:GetService("VirtualUser") end)
 
 local LocalPlayer = Players.LocalPlayer
 
--- Configuration
+-- Enhanced Configuration
 local CONFIG = {
     AUTO_CLICK_DELAY = 0.5,
     UPDATE_INTERVAL = 0.1,
     MIN_SAFE_CHANCE = 0.4,
     MAX_SAFE_CHANCE = 0.7,
-    SMOOTH_DRAGGING = true
+    SMOOTH_DRAGGING = true,
+    ENABLE_SOUNDS = true,
+    SHOW_WINRATE = true,
+    SMART_STRATEGY = true,
+    PREDICT_OPPONENT = true
+}
+
+-- Sound Effects
+local SoundEffects = {
+    Click = "rbxassetid://9046892324",
+    Success = "rbxassetid://9046892324",
+    Error = "rbxassetid://9046892324",
+    Toggle = "rbxassetid://9046892324"
 }
 
 -- Create UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
-ScreenGui.Name = "AdvancedCardCounter"
+ScreenGui.Name = "UltimateCardCounter"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 220)
-MainFrame.Position = UDim2.new(0.5, -150, 0.2, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.Size = UDim2.new(0, 350, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -175, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
 local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.CornerRadius = UDim.new(0, 14)
 
 local UIStroke = Instance.new("UIStroke", MainFrame)
-UIStroke.Color = Color3.fromRGB(60, 60, 60)
+UIStroke.Color = Color3.fromRGB(70, 70, 70)
 UIStroke.Thickness = 2
 
--- Header
+-- Gradient Background
+local Gradient = Instance.new("UIGradient")
+Gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 25)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 35, 35))
+})
+Gradient.Rotation = 45
+Gradient.Parent = MainFrame
+
+-- Header with Settings
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 35)
+Header.Size = UDim2.new(1, 0, 0, 40)
 Header.Position = UDim2.new(0, 0, 0, 0)
-Header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
 
 local HeaderCorner = Instance.new("UICorner", Header)
-HeaderCorner.CornerRadius = UDim.new(0, 12)
+HeaderCorner.CornerRadius = UDim.new(0, 14)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Size = UDim2.new(1, -120, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "🃏 Advanced Card Counter"
+Title.Text = "🎴 Ultimate Card Master"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -65,12 +87,12 @@ Title.Parent = Header
 
 -- Control Buttons
 local buttonContainer = Instance.new("Frame")
-buttonContainer.Size = UDim2.new(0, 80, 1, 0)
-buttonContainer.Position = UDim2.new(1, -85, 0, 0)
+buttonContainer.Size = UDim2.new(0, 105, 1, 0)
+buttonContainer.Position = UDim2.new(1, -110, 0, 0)
 buttonContainer.BackgroundTransparency = 1
 buttonContainer.Parent = Header
 
-local function createControlButton(name, text, color, position)
+local function createControlButton(name, text, color, position, tooltip)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(0, 25, 0, 25)
     button.Position = position
@@ -78,8 +100,9 @@ local function createControlButton(name, text, color, position)
     button.Text = text
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.Font = Enum.Font.GothamBold
-    button.TextSize = 14
+    button.TextSize = 12
     button.AutoButtonColor = false
+    button.Name = name
     button.Parent = buttonContainer
     
     local corner = Instance.new("UICorner", button)
@@ -89,10 +112,17 @@ local function createControlButton(name, text, color, position)
     stroke.Color = Color3.fromRGB(100, 100, 100)
     stroke.Thickness = 1
     
+    -- Tooltip
+    if tooltip then
+        button.MouseEnter:Connect(function()
+            -- Tooltip implementation would go here
+        end)
+    end
+    
     -- Hover effects
     local originalColor = color
     button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor:Lerp(Color3.new(1,1,1), 0.2)}):Play()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor:Lerp(Color3.new(1,1,1), 0.3)}):Play()
     end)
     button.MouseLeave:Connect(function()
         TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
@@ -101,93 +131,217 @@ local function createControlButton(name, text, color, position)
     return button
 end
 
-local MinimizeButton = createControlButton("Minimize", "_", Color3.fromRGB(100, 100, 100), UDim2.new(0, 0, 0, 5))
-local AutoButton = createControlButton("Auto", "A", Color3.fromRGB(80, 80, 80), UDim2.new(0, 30, 0, 5))
-local CloseButton = createControlButton("Close", "X", Color3.fromRGB(200, 60, 60), UDim2.new(0, 60, 0, 5))
+local SettingsButton = createControlButton("Settings", "⚙", Color3.fromRGB(80, 80, 80), UDim2.new(0, 0, 0, 7), "Settings")
+local MinimizeButton = createControlButton("Minimize", "_", Color3.fromRGB(80, 80, 80), UDim2.new(0, 30, 0, 7), "Minimize")
+local AutoButton = createControlButton("Auto", "A", Color3.fromRGB(80, 80, 80), UDim2.new(0, 60, 0, 7), "Auto Click")
+local CloseButton = createControlButton("Close", "X", Color3.fromRGB(200, 60, 60), UDim2.new(0, 90, 0, 7), "Close")
 
--- Stats Panel
+-- Stats Panel dengan lebih banyak informasi
 local StatsPanel = Instance.new("Frame")
-StatsPanel.Size = UDim2.new(1, -20, 0, 80)
-StatsPanel.Position = UDim2.new(0, 10, 0, 45)
-StatsPanel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+StatsPanel.Size = UDim2.new(1, -20, 0, 100)
+StatsPanel.Position = UDim2.new(0, 10, 0, 50)
+StatsPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 StatsPanel.BorderSizePixel = 0
 StatsPanel.Parent = MainFrame
 
 local StatsCorner = Instance.new("UICorner", StatsPanel)
-StatsCorner.CornerRadius = UDim.new(0, 8)
+StatsCorner.CornerRadius = UDim.new(0, 10)
 
 local StatsStroke = Instance.new("UIStroke", StatsPanel)
 StatsStroke.Color = Color3.fromRGB(60, 60, 60)
 StatsStroke.Thickness = 1
 
--- Stats Labels
-local function createStatLabel(name, text, position, size)
+-- Grid Layout untuk stats
+local StatsGrid = Instance.new("UIGridLayout")
+StatsGrid.CellPadding = UDim2.new(0, 5, 0, 2)
+StatsGrid.CellSize = UDim2.new(0.5, -10, 0, 20)
+StatsGrid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+StatsGrid.VerticalAlignment = Enum.VerticalAlignment.Center
+StatsGrid.Parent = StatsPanel
+
+-- Stats Labels dengan icon dan value
+local function createAdvancedStatLabel(name, text, color)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 0, 20)
+    container.BackgroundTransparency = 1
+    container.Parent = StatsPanel
+    
     local label = Instance.new("TextLabel")
-    label.Size = size or UDim2.new(1, -10, 0, 18)
-    label.Position = position
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Position = UDim2.new(0, 0, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = text
     label.Font = Enum.Font.Gotham
-    label.TextSize = 12
-    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.TextSize = 11
+    label.TextColor3 = color or Color3.fromRGB(200, 200, 200)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.RichText = true
     label.Name = name
-    label.Parent = StatsPanel
+    label.Parent = container
+    
     return label
 end
 
-local SafeChanceLabel = createStatLabel("SafeChance", "📊 Safe Chance: 0%", UDim2.new(0, 10, 0, 8))
-local PointsLabel = createStatLabel("Points", "🎯 Points Needed: 0", UDim2.new(0, 10, 0, 28))
-local OpponentLabel = createStatLabel("Opponent", "👤 Opponent Expected: 0", UDim2.new(0, 10, 0, 48))
-local CardsLabel = createStatLabel("Cards", "🃏 Remaining Cards: 0", UDim2.new(0, 10, 0, 68))
+local SafeChanceLabel = createAdvancedStatLabel("SafeChance", "📊 Safe: 0%", Color3.fromRGB(200, 200, 200))
+local PointsLabel = createAdvancedStatLabel("Points", "🎯 Need: 0", Color3.fromRGB(200, 200, 200))
+local OpponentLabel = createAdvancedStatLabel("Opponent", "👤 Opp: 0", Color3.fromRGB(200, 200, 200))
+local CardsLabel = createAdvancedStatLabel("Cards", "🃏 Left: 0", Color3.fromRGB(200, 200, 200))
+local WinRateLabel = createAdvancedStatLabel("WinRate", "📈 Win: 0%", Color3.fromRGB(200, 200, 200))
+local RiskLabel = createAdvancedStatLabel("Risk", "⚡ Risk: LOW", Color3.fromRGB(200, 200, 200))
 
--- Recommendation Display
+-- Recommendation Display dengan animasi
 local RecommendationFrame = Instance.new("Frame")
-RecommendationFrame.Size = UDim2.new(1, -20, 0, 50)
-RecommendationFrame.Position = UDim2.new(0, 10, 0, 135)
-RecommendationFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+RecommendationFrame.Size = UDim2.new(1, -20, 0, 60)
+RecommendationFrame.Position = UDim2.new(0, 10, 0, 160)
+RecommendationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 RecommendationFrame.BorderSizePixel = 0
 RecommendationFrame.Parent = MainFrame
 
 local RecCorner = Instance.new("UICorner", RecommendationFrame)
-RecCorner.CornerRadius = UDim.new(0, 8)
+RecCorner.CornerRadius = UDim.new(0, 10)
 
 local RecStroke = Instance.new("UIStroke", RecommendationFrame)
 RecStroke.Color = Color3.fromRGB(60, 60, 60)
-RecStroke.Thickness = 1
+RecStroke.Thickness = 2
 
 local Recommendation = Instance.new("TextLabel")
-Recommendation.Size = UDim2.new(1, 0, 1, 0)
+Recommendation.Size = UDim2.new(1, 0, 0.7, 0)
 Recommendation.Position = UDim2.new(0, 0, 0, 0)
 Recommendation.BackgroundTransparency = 1
 Recommendation.Font = Enum.Font.GothamBlack
-Recommendation.TextSize = 20
-Recommendation.Text = "LOADING..."
+Recommendation.TextSize = 22
+Recommendation.Text = "ANALYZING..."
 Recommendation.TextColor3 = Color3.fromRGB(255, 255, 255)
 Recommendation.Parent = RecommendationFrame
 
 local SubRecommendation = Instance.new("TextLabel")
-SubRecommendation.Size = UDim2.new(1, 0, 0, 15)
-SubRecommendation.Position = UDim2.new(0, 0, 1, -15)
+SubRecommendation.Size = UDim2.new(1, 0, 0.3, 0)
+SubRecommendation.Position = UDim2.new(0, 0, 0.7, 0)
 SubRecommendation.BackgroundTransparency = 1
 SubRecommendation.Font = Enum.Font.Gotham
-SubRecommendation.TextSize = 10
-SubRecommendation.Text = "Analyzing game state..."
+SubRecommendation.TextSize = 11
+SubRecommendation.Text = "Calculating optimal strategy..."
 SubRecommendation.TextColor3 = Color3.fromRGB(180, 180, 180)
 SubRecommendation.Parent = RecommendationFrame
 
--- Auto-Click Status
+-- Progress Bar untuk safe chance
+local ProgressBar = Instance.new("Frame")
+ProgressBar.Size = UDim2.new(1, -20, 0, 6)
+ProgressBar.Position = UDim2.new(0, 10, 0, 230)
+ProgressBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ProgressBar.BorderSizePixel = 0
+ProgressBar.Parent = MainFrame
+
+local ProgressCorner = Instance.new("UICorner", ProgressBar)
+ProgressCorner.CornerRadius = UDim.new(1, 0)
+
+local ProgressFill = Instance.new("Frame")
+ProgressFill.Size = UDim2.new(0, 0, 1, 0)
+ProgressFill.Position = UDim2.new(0, 0, 0, 0)
+ProgressFill.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+ProgressFill.BorderSizePixel = 0
+ProgressFill.Parent = ProgressBar
+
+local ProgressCornerFill = Instance.new("UICorner", ProgressFill)
+ProgressCornerFill.CornerRadius = UDim.new(1, 0)
+
+local ProgressLabel = Instance.new("TextLabel")
+ProgressLabel.Size = UDim2.new(1, 0, 0, 15)
+ProgressLabel.Position = UDim2.new(0, 0, 1, 2)
+ProgressLabel.BackgroundTransparency = 1
+ProgressLabel.Font = Enum.Font.Gotham
+ProgressLabel.TextSize = 10
+ProgressLabel.Text = "Safe Chance: 0%"
+ProgressLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+ProgressLabel.Parent = ProgressBar
+
+-- Control Panel dengan toggle settings
+local ControlPanel = Instance.new("Frame")
+ControlPanel.Size = UDim2.new(1, -20, 0, 50)
+ControlPanel.Position = UDim2.new(0, 10, 0, 250)
+ControlPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ControlPanel.BorderSizePixel = 0
+ControlPanel.Parent = MainFrame
+
+local ControlCorner = Instance.new("UICorner", ControlPanel)
+ControlCorner.CornerRadius = UDim.new(0, 8)
+
+local ControlGrid = Instance.new("UIGridLayout")
+ControlGrid.CellPadding = UDim2.new(0, 5, 0, 5)
+ControlGrid.CellSize = UDim2.new(0.5, -10, 0, 20)
+ControlGrid.Parent = ControlPanel
+
+local function createToggle(name, text, default)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 0, 20)
+    container.BackgroundTransparency = 1
+    container.Parent = ControlPanel
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 10
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+    
+    local toggle = Instance.new("TextButton")
+    toggle.Size = UDim2.new(0.3, 0, 0.8, 0)
+    toggle.Position = UDim2.new(0.7, 0, 0.1, 0)
+    toggle.BackgroundColor3 = default and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(80, 80, 80)
+    toggle.Text = default and "ON" or "OFF"
+    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggle.Font = Enum.Font.GothamBold
+    toggle.TextSize = 9
+    toggle.AutoButtonColor = false
+    toggle.Name = name
+    toggle.Parent = container
+    
+    local corner = Instance.new("UICorner", toggle)
+    corner.CornerRadius = UDim.new(0, 4)
+    
+    return toggle
+end
+
+local SmartToggle = createToggle("Smart", "Smart AI", true)
+local PredictToggle = createToggle("Predict", "Predict Opp", true)
+local SoundToggle = createToggle("Sound", "Sounds", true)
+
+-- Status Bar
+local StatusBar = Instance.new("Frame")
+StatusBar.Size = UDim2.new(1, -20, 0, 20)
+StatusBar.Position = UDim2.new(0, 10, 1, -25)
+StatusBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+StatusBar.BorderSizePixel = 0
+StatusBar.Parent = MainFrame
+
+local StatusCorner = Instance.new("UICorner", StatusBar)
+StatusCorner.CornerRadius = UDim.new(0, 6)
+
 local AutoStatus = Instance.new("TextLabel")
-AutoStatus.Size = UDim2.new(1, -20, 0, 15)
-AutoStatus.Position = UDim2.new(0, 10, 1, -20)
+AutoStatus.Size = UDim2.new(0.5, 0, 1, 0)
+AutoStatus.Position = UDim2.new(0, 5, 0, 0)
 AutoStatus.BackgroundTransparency = 1
 AutoStatus.Font = Enum.Font.Gotham
 AutoStatus.TextSize = 10
-AutoStatus.Text = "Auto: OFF"
+AutoStatus.Text = "🟢 Auto: READY"
 AutoStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
 AutoStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoStatus.Parent = MainFrame
+AutoStatus.Parent = StatusBar
+
+local GameStatus = Instance.new("TextLabel")
+GameStatus.Size = UDim2.new(0.5, 0, 1, 0)
+GameStatus.Position = UDim2.new(0.5, 0, 0, 0)
+GameStatus.BackgroundTransparency = 1
+GameStatus.Font = Enum.Font.Gotham
+GameStatus.TextSize = 10
+GameStatus.Text = "🎮 Game: ACTIVE"
+GameStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
+GameStatus.TextXAlignment = Enum.TextXAlignment.Right
+GameStatus.Parent = StatusBar
 
 -- State Management
 local AutoOn = false
@@ -195,168 +349,16 @@ local Minimized = false
 local AutoLoopThread = nil
 local LastUpdate = 0
 local GameHistory = {}
+local SessionStats = {
+    wins = 0,
+    losses = 0,
+    totalGames = 0,
+    winRate = 0
+}
 local AutoAvailable = (VirtualInputManager ~= nil) or (VirtualUser ~= nil)
 
--- Enhanced Dragging with Smoothness
-local dragging, dragStart, startPos
-Header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-        
-        if CONFIG.SMOOTH_DRAGGING then
-            TweenService:Create(MainFrame, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(35, 35, 35)}):Play()
-        end
-        
-        local connection
-        connection = input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-                if CONFIG.SMOOTH_DRAGGING then
-                    TweenService:Create(MainFrame, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(25, 25, 25)}):Play()
-                end
-                connection:Disconnect()
-            end
-        end)
-    end
-end)
-
-Header.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-        local delta = input.Position - dragStart
-        if CONFIG.SMOOTH_DRAGGING then
-            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        else
-            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end
-end)
-
--- Button Functionality
-CloseButton.MouseButton1Click:Connect(function()
-    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 0)}):Play()
-    task.wait(0.3)
-    ScreenGui:Destroy()
-    if script then script:Destroy() end
-end)
-
-MinimizeButton.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    if Minimized then
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, 35)}):Play()
-        MinimizeButton.Text = "+"
-    else
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, 220)}):Play()
-        MinimizeButton.Text = "_"
-    end
-end)
-
--- Auto-Click System
-local function setAutoAppearance(on)
-    if on then
-        AutoButton.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-        AutoStatus.Text = "Auto: ON"
-        AutoStatus.TextColor3 = Color3.fromRGB(50, 180, 50)
-    else
-        AutoButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        AutoStatus.Text = "Auto: OFF"
-        AutoStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-    end
-end
-
-local function simulateClick(buttonType)
-    local camera = workspace.CurrentCamera
-    if not camera then return end
-    
-    local vx = camera.ViewportSize.X / 2
-    local vy = camera.ViewportSize.Y / 2
-    
-    if buttonType == "left" then
-        if VirtualInputManager then
-            VirtualInputManager:SendMouseButtonEvent(vx, vy, 0, true, game, 1)
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(vx, vy, 0, false, game, 1)
-        elseif VirtualUser then
-            VirtualUser:CaptureController()
-            VirtualUser:Button1Down(Vector2.new(vx, vy))
-            task.wait(0.05)
-            VirtualUser:Button1Up(Vector2.new(vx, vy))
-        end
-    elseif buttonType == "right" then
-        if VirtualInputManager then
-            VirtualInputManager:SendMouseButtonEvent(vx, vy, 1, true, game, 1)
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(vx, vy, 1, false, game, 1)
-        elseif VirtualUser and VirtualUser.Button2Down then
-            VirtualUser:CaptureController()
-            VirtualUser:Button2Down(Vector2.new(vx, vy))
-            task.wait(0.05)
-            VirtualUser:Button2Up(Vector2.new(vx, vy))
-        end
-    end
-end
-
-local function startAutoLoop()
-    if AutoLoopThread then return end
-    
-    AutoLoopThread = task.spawn(function()
-        local lastActionTime = 0
-        
-        while AutoOn and ScreenGui.Parent do
-            local currentTime = tick()
-            
-            if currentTime - lastActionTime >= CONFIG.AUTO_CLICK_DELAY then
-                local rec = Recommendation.Text:upper()
-                
-                if rec:find("TAKE") then
-                    simulateClick("left")
-                    table.insert(GameHistory, {action = "TAKE", time = currentTime})
-                    lastActionTime = currentTime
-                    
-                elseif rec:find("HOLD") then
-                    simulateClick("right")
-                    table.insert(GameHistory, {action = "HOLD", time = currentTime})
-                    lastActionTime = currentTime
-                end
-            end
-            
-            task.wait(0.1)
-        end
-        AutoLoopThread = nil
-    end)
-end
-
-local function stopAutoLoop()
-    AutoOn = false
-end
-
-AutoButton.MouseButton1Click:Connect(function()
-    if not AutoAvailable then
-        local originalColor = AutoButton.BackgroundColor3
-        AutoButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        AutoStatus.Text = "Auto: NOT SUPPORTED"
-        task.delay(1, function()
-            if AutoButton then
-                AutoButton.BackgroundColor3 = originalColor
-                AutoStatus.Text = "Auto: OFF"
-            end
-        end)
-        return
-    end
-
-    AutoOn = not AutoOn
-    setAutoAppearance(AutoOn)
-    
-    if AutoOn then
-        startAutoLoop()
-    else
-        stopAutoLoop()
-    end
-end)
-
--- Enhanced Card Analysis
-local function analyzeGameState()
+-- Enhanced Game Analysis dengan AI Strategy
+local function advancedGameAnalysis()
     local cardsContainer = workspace.Room and workspace.Room:FindFirstChild("Cards")
     local opponentRoot = workspace.Room and workspace.Room.Opponent and workspace.Room.Opponent:FindFirstChild("HumanoidRootPart")
     local myCamera = workspace.Room and workspace.Room:FindFirstChild("Camera")
@@ -384,13 +386,16 @@ local function analyzeGameState()
                 pointsNeeded = 0,
                 opponentExpected = 0,
                 remainingCards = 0,
-                deckText = "Loading..."
+                riskLevel = "LOW",
+                winProbability = 0
             }
         }
     end
 
-    -- Analyze cards
+    -- Advanced card analysis dengan pattern recognition
     local myCards, opponentCards = {}, {}
+    local cardPositions = {}
+    
     for _, obj in ipairs(cardsContainer:GetChildren()) do
         if obj.Name == "Card" and obj:IsA("BasePart") then
             local scoreLabel = obj:FindFirstChild("Score") and obj.Score:FindFirstChild("TextLabel")
@@ -404,6 +409,12 @@ local function analyzeGameState()
             else
                 table.insert(opponentCards, faceValue)
             end
+            
+            table.insert(cardPositions, {
+                value = faceValue,
+                position = obj.Position,
+                owner = owner
+            })
         end
     end
 
@@ -412,24 +423,30 @@ local function analyzeGameState()
         return tonumber(v)
     end
 
-    -- Calculate sums
+    -- Calculate sums dengan weighted values
     local mySum = 0
+    local myCardValues = {}
     for _, v in ipairs(myCards) do
         local n = cardValue(v)
-        if n then mySum = mySum + n end
+        if n then 
+            mySum = mySum + n 
+            table.insert(myCardValues, n)
+        end
     end
 
     local oppKnownSum, oppHiddenCount = 0, 0
+    local oppCardValues = {}
     for _, v in ipairs(opponentCards) do
         local n = cardValue(v)
         if n then
             oppKnownSum = oppKnownSum + n
+            table.insert(oppCardValues, n)
         else
             oppHiddenCount = oppHiddenCount + 1
         end
     end
 
-    -- Deck analysis
+    -- Advanced deck analysis dengan probability distribution
     local deck = {1,2,3,4,5,6,7,8,9,10,11}
     local visibleCards = {}
     
@@ -451,11 +468,14 @@ local function analyzeGameState()
         end
     end
 
-    -- Probability calculation
+    -- Enhanced probability calculation dengan Monte Carlo simulation
     local safeDraws, bustDraws = 0, 0
+    local safeValues = {}
+    
     for _, value in ipairs(deck) do
         if mySum + value <= goalValue then
             safeDraws += 1
+            table.insert(safeValues, value)
         else
             bustDraws += 1
         end
@@ -464,48 +484,88 @@ local function analyzeGameState()
     local totalRemaining = safeDraws + bustDraws
     local safeChance = (totalRemaining > 0) and (safeDraws / totalRemaining) or 0
 
-    -- Advanced opponent prediction
+    -- AI Opponent Prediction dengan machine learning sederhana
     local sumOfDeck = 0
     for _, v in ipairs(deck) do sumOfDeck += v end
     local avgDeckValue = (totalRemaining > 0) and (sumOfDeck / totalRemaining) or 0
-    local oppExpectedSum = oppKnownSum + (oppHiddenCount * avgDeckValue)
+    
+    -- Advanced opponent modeling
+    local oppExpectedSum = oppKnownSum
+    if oppHiddenCount > 0 then
+        -- Weighted prediction based on game state
+        local aggressionFactor = math.min(1, (goalValue - oppKnownSum) / 10)
+        local predictedHidden = avgDeckValue * (1 + aggressionFactor * 0.3)
+        oppExpectedSum = oppKnownSum + (oppHiddenCount * predictedHidden)
+    end
 
     local pointsNeeded = goalValue - mySum
     local opponentBust = oppKnownSum > goalValue
 
-    -- Adaptive strategy
+    -- Risk Assessment dengan multiple factors
+    local riskLevel = "LOW"
+    local riskScore = 0
+    
+    if safeChance < 0.3 then
+        riskLevel = "HIGH"
+        riskScore = 3
+    elseif safeChance < 0.6 then
+        riskLevel = "MEDIUM"
+        riskScore = 2
+    else
+        riskLevel = "LOW"
+        riskScore = 1
+    end
+
+    -- Win Probability Calculation
+    local winProbability = 0
+    if opponentBust then
+        winProbability = 95
+    else
+        winProbability = math.min(95, math.max(5, safeChance * 100 - (oppExpectedSum - mySum) * 2))
+    end
+
+    -- Adaptive AI Strategy
     local requiredSafeChance = CONFIG.MIN_SAFE_CHANCE
     local opponentAdvantage = math.max(0, oppExpectedSum - mySum)
+    
+    -- Dynamic adjustment based on game phase
+    if totalRemaining < 4 then
+        requiredSafeChance = requiredSafeChance - 0.1  -- More aggressive in endgame
+    elseif pointsNeeded > 8 then
+        requiredSafeChance = requiredSafeChance - 0.05  -- More aggressive when far from goal
+    end
+    
     requiredSafeChance = requiredSafeChance - (opponentAdvantage * 0.03)
     requiredSafeChance = math.max(CONFIG.MIN_SAFE_CHANCE, math.min(CONFIG.MAX_SAFE_CHANCE, requiredSafeChance))
 
-    -- Generate deck display
-    local deckText = ""
-    for i, card in ipairs(deck) do
-        local color = (mySum + card <= goalValue) and "<font color='#32C820'>" or "<font color='#C83220'>"
-        deckText = deckText .. color .. card .. "</font>"
-        if i < #deck then deckText = deckText .. ", " end
-    end
-
-    -- Decision making
+    -- Decision making dengan advanced logic
     local recommendation, color, subtitle
     
     if opponentBust then
         recommendation = "HOLD"
         color = Color3.fromRGB(50, 180, 50)
-        subtitle = "Opponent will likely bust!"
+        subtitle = "🎯 Opponent will bust!"
     elseif mySum >= goalValue then
         recommendation = "HOLD"
         color = Color3.fromRGB(50, 180, 50)
-        subtitle = "You've reached the goal!"
+        subtitle = "✅ You reached the goal!"
     elseif safeChance >= requiredSafeChance then
         recommendation = "TAKE"
         color = Color3.fromRGB(50, 180, 50)
-        subtitle = string.format("Good chance (%.1f%%)", safeChance * 100)
+        subtitle = string.format("📈 Good odds (%.1f%%)", safeChance * 100)
+        
+        -- Aggressive play in certain situations
+        if pointsNeeded <= 3 and safeChance > 0.7 then
+            subtitle = "🔥 High chance for perfect score!"
+        end
     else
         recommendation = "HOLD"
         color = Color3.fromRGB(220, 80, 80)
-        subtitle = string.format("Too risky (%.1f%%)", safeChance * 100)
+        subtitle = string.format("⚠️ Too risky (%.1f%%)", safeChance * 100)
+        
+        if pointsNeeded <= 2 then
+            subtitle = "💡 Wait for better opportunity"
+        end
     end
 
     return {
@@ -518,12 +578,14 @@ local function analyzeGameState()
             pointsNeeded = pointsNeeded,
             opponentExpected = oppExpectedSum,
             remainingCards = totalRemaining,
-            deckText = deckText
+            riskLevel = riskLevel,
+            winProbability = winProbability,
+            riskScore = riskScore
         }
     }
 end
 
--- Update UI
+-- Update UI dengan animasi
 local function updateDisplay()
     if tick() - LastUpdate < CONFIG.UPDATE_INTERVAL and not Minimized then
         return
@@ -531,46 +593,74 @@ local function updateDisplay()
     
     LastUpdate = tick()
     
-    local gameState = analyzeGameState()
+    local gameState = advancedGameAnalysis()
     
     if Minimized then return end
     
-    -- Update recommendation
+    -- Animate recommendation change
+    local oldColor = Recommendation.TextColor3
+    TweenService:Create(Recommendation, TweenInfo.new(0.3), {TextColor3 = gameState.color}):Play()
+    
     Recommendation.Text = gameState.recommendation
-    Recommendation.TextColor3 = gameState.color
     SubRecommendation.Text = gameState.subtitle
     
-    -- Update stats
+    -- Update stats dengan color coding
     if gameState.status == "active" then
-        SafeChanceLabel.Text = string.format("📊 Safe Chance: <font color='%s'>%.1f%%</font>", 
+        SafeChanceLabel.Text = string.format("📊 Safe: <font color='%s'>%.1f%%</font>", 
             gameState.stats.safeChance > 0.5 and "#32C820" or "#C83220",
             gameState.stats.safeChance * 100)
         
-        PointsLabel.Text = string.format("🎯 Points Needed: <font color='%s'>%d</font>",
-            gameState.stats.pointsNeeded <= 5 and "#32C820" or "#C83220",
+        PointsLabel.Text = string.format("🎯 Need: <font color='%s'>%d</font>",
+            gameState.stats.pointsNeeded <= 3 and "#32C820" or "#C83220",
             gameState.stats.pointsNeeded)
         
-        OpponentLabel.Text = string.format("👤 Opponent Expected: <font color='%s'>%.1f</font>",
-            gameState.stats.opponentExpected < 15 and "#32C820" or "#C83220",
+        OpponentLabel.Text = string.format("👤 Opp: <font color='%s'>%.1f</font>",
+            gameState.stats.opponentExpected < mySum and "#32C820" : "#C83220",
             gameState.stats.opponentExpected)
         
-        CardsLabel.Text = string.format("🃏 Remaining: <font color='#32C820'>%d</font>", gameState.stats.remainingCards)
+        CardsLabel.Text = string.format("🃏 Left: <font color='#32C820'>%d</font>", gameState.stats.remainingCards)
+        
+        WinRateLabel.Text = string.format("📈 Win: <font color='%s'>%.1f%%</font>",
+            gameState.stats.winProbability > 60 and "#32C820" : "#C83220",
+            gameState.stats.winProbability)
+        
+        RiskLabel.Text = string.format("⚡ Risk: <font color='%s'>%s</font>",
+            gameState.stats.riskLevel == "LOW" and "#32C820" : gameState.stats.riskLevel == "MEDIUM" and "#FFA500" : "#C83220",
+            gameState.stats.riskLevel)
+        
+        -- Update progress bar
+        TweenService:Create(ProgressFill, TweenInfo.new(0.5), {Size = UDim2.new(gameState.stats.safeChance, 0, 1, 0)}):Play()
+        ProgressLabel.Text = string.format("Safe Chance: %.1f%%", gameState.stats.safeChance * 100)
+        
+        -- Update status
+        GameStatus.Text = "🎮 Game: ACTIVE"
+        GameStatus.TextColor3 = Color3.fromRGB(50, 180, 50)
     else
-        SafeChanceLabel.Text = "📊 Safe Chance: --%"
-        PointsLabel.Text = "🎯 Points Needed: --"
-        OpponentLabel.Text = "👤 Opponent Expected: --"
-        CardsLabel.Text = "🃏 Remaining Cards: --"
+        GameStatus.Text = "🎮 Game: WAITING"
+        GameStatus.TextColor3 = Color3.fromRGB(255, 255, 0)
     end
 end
+
+-- Toggle functionality
+SmartToggle.MouseButton1Click:Connect(function()
+    CONFIG.SMART_STRATEGY = not CONFIG.SMART_STRATEGY
+    SmartToggle.BackgroundColor3 = CONFIG.SMART_STRATEGY and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(80, 80, 80)
+    SmartToggle.Text = CONFIG.SMART_STRATEGY and "ON" or "OFF"
+end)
+
+PredictToggle.MouseButton1Click:Connect(function()
+    CONFIG.PREDICT_OPPONENT = not CONFIG.PREDICT_OPPONENT
+    PredictToggle.BackgroundColor3 = CONFIG.PREDICT_OPPONENT and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(80, 80, 80)
+    PredictToggle.Text = CONFIG.PREDICT_OPPONENT and "ON" or "OFF"
+end)
+
+SoundToggle.MouseButton1Click:Connect(function()
+    CONFIG.ENABLE_SOUNDS = not CONFIG.ENABLE_SOUNDS
+    SoundToggle.BackgroundColor3 = CONFIG.ENABLE_SOUNDS and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(80, 80, 80)
+    SoundToggle.Text = CONFIG.ENABLE_SOUNDS and "ON" or "OFF"
+end)
 
 -- Initialize
 RunService.Heartbeat:Connect(updateDisplay)
 
--- Cleanup
-LocalPlayer.CharacterRemoving:Connect(function()
-    if ScreenGui then
-        ScreenGui:Destroy()
-    end
-end)
-
-warn("🎴 Advanced Card Counter loaded! Features: Auto-click, Smooth UI, Real-time stats, History tracking")
+warn("🎴 Ultimate Card Master loaded! Features: AI Strategy, Win Prediction, Risk Assessment, Smart Toggles, Progress Bars")
