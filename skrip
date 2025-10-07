@@ -1,0 +1,122 @@
+-- Card Counter with History Panel
+local Players, RunService, UserInputService = game:GetService("Players"), game:GetService("RunService"), game:GetService("UserInputService")
+local VirtualInputManager = pcall(function() return game:GetService("VirtualInputManager") end) and game:GetService("VirtualInputManager") or nil
+local VirtualUser = pcall(function() return game:GetService("VirtualUser") end) and game:GetService("VirtualUser") or nil
+
+local LocalPlayer = Players.LocalPlayer
+
+-- // Helper UI
+local function makeButton(parent, text, size, pos, bgColor, callback)
+    local b = Instance.new("TextButton")
+    b.Size, b.Position = size, pos
+    b.BackgroundColor3 = bgColor or Color3.fromRGB(50, 50, 50)
+    b.Text, b.Font, b.TextSize, b.TextColor3 = text, Enum.Font.SourceSansBold, 18, Color3.new(1,1,1)
+    b.Parent = parent
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+    if callback then b.MouseButton1Click:Connect(callback) end
+    return b
+end
+
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "CardCounter"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size, Frame.Position = UDim2.new(0, 280, 0, 280), UDim2.new(0.5, -140, 0.2, 0)
+Frame.BackgroundColor3, Frame.BorderSizePixel = Color3.fromRGB(25,25,25), 0
+Frame.Active, Frame.Draggable = true, true
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,8)
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Size, Title.Position = UDim2.new(1, -60, 0, 30), UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text, Title.Font, Title.TextSize, Title.TextColor3 = "Card Counter", Enum.Font.SourceSansBold, 20, Color3.new(1,1,1)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local Recommendation = Instance.new("TextLabel", Frame)
+Recommendation.Size, Recommendation.Position = UDim2.new(1, -20, 0, 30), UDim2.new(0, 10, 0, 35)
+Recommendation.BackgroundTransparency = 1
+Recommendation.Font, Recommendation.TextSize, Recommendation.TextColor3 = Enum.Font.SourceSansBold, 26, Color3.new(1,1,1)
+
+local InfoLabel = Instance.new("TextLabel", Frame)
+InfoLabel.Size, InfoLabel.Position = UDim2.new(1, -20, 0, 90), UDim2.new(0, 10, 0, 70)
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Font, InfoLabel.TextSize, InfoLabel.TextColor3 = Enum.Font.SourceSans, 16, Color3.fromRGB(200,200,200)
+InfoLabel.TextXAlignment, InfoLabel.TextYAlignment, InfoLabel.TextWrapped, InfoLabel.RichText = Enum.TextXAlignment.Left, Enum.TextYAlignment.Top, true, true
+
+-- History Panel
+local HistoryTitle = Instance.new("TextLabel", Frame)
+HistoryTitle.Size, HistoryTitle.Position = UDim2.new(1, -20, 0, 20), UDim2.new(0, 10, 0, 160)
+HistoryTitle.BackgroundTransparency = 1
+HistoryTitle.Font, HistoryTitle.TextSize, HistoryTitle.TextColor3 = Enum.Font.SourceSansBold, 16, Color3.fromRGB(255,255,0)
+HistoryTitle.TextXAlignment = Enum.TextXAlignment.Left
+HistoryTitle.Text = "History:"
+
+local HistoryBox = Instance.new("TextLabel", Frame)
+HistoryBox.Size, HistoryBox.Position = UDim2.new(1, -20, 0, 90), UDim2.new(0, 10, 0, 185)
+HistoryBox.BackgroundTransparency = 0.2
+HistoryBox.BackgroundColor3 = Color3.fromRGB(15,15,15)
+HistoryBox.TextXAlignment, HistoryBox.TextYAlignment = Enum.TextXAlignment.Left, Enum.TextYAlignment.Top
+HistoryBox.TextWrapped, HistoryBox.RichText = true, true
+HistoryBox.Font, HistoryBox.TextSize, HistoryBox.TextColor3 = Enum.Font.Code, 14, Color3.fromRGB(200,200,200)
+HistoryBox.Text = "No history yet"
+Instance.new("UICorner", HistoryBox).CornerRadius = UDim.new(0,6)
+
+local HistoryData = {}
+
+local function pushHistory(entry, isTake)
+    table.insert(HistoryData, 1, (isTake and "<font color='#32C820'>" or "<font color='#C83220'>") .. entry .. "</font>")
+    if #HistoryData > 10 then table.remove(HistoryData, #HistoryData) end
+    HistoryBox.Text = table.concat(HistoryData, "\n")
+end
+
+-- Tombol Auto
+local AutoOn = false
+local AutoButton = makeButton(Frame, "Auto", UDim2.new(0,50,0,25), UDim2.new(1,-110,0,3), Color3.fromRGB(100,100,100), function()
+    AutoOn = not AutoOn
+    AutoButton.BackgroundColor3 = AutoOn and Color3.fromRGB(50,200,50) or Color3.fromRGB(100,100,100)
+end)
+
+-- Tombol Minimize
+local Minimized = false
+local MinBtn = makeButton(Frame, "_", UDim2.new(0,25,0,25), UDim2.new(1,-80,0,3), Color3.fromRGB(90,90,200), function()
+    Minimized = not Minimized
+    for _,v in ipairs(Frame:GetChildren()) do
+        if v ~= Title and v ~= AutoButton and v ~= MinBtn then
+            v.Visible = not Minimized
+        end
+    end
+    Frame.Size = Minimized and UDim2.new(0,280,0,35) or UDim2.new(0,280,0,280)
+end)
+
+-- Tombol Close
+makeButton(Frame, "X", UDim2.new(0,25,0,25), UDim2.new(1,-40,0,3), Color3.fromRGB(200,50,50), function()
+    ScreenGui:Destroy()
+end)
+
+-- Hotkey Toggle Auto
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.F4 then
+        AutoButton:Activate()
+    end
+end)
+
+-- Dummy Advisor (replace dengan logic kamu)
+local function updateAdvisor()
+    local take = math.random() > 0.5
+    Recommendation.Text = take and "TAKE" or "HOLD"
+    Recommendation.TextColor3 = take and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
+
+    local safeChance = math.random(40,80)
+    local oppExpected = math.random(10,20)
+    InfoLabel.Text = string.format("Safe Chance: %d%%\nOpponent Expected: %d", safeChance, oppExpected)
+
+    pushHistory(Recommendation.Text .. string.format(" (%.0f%%)", safeChance), take)
+end
+
+-- Update tiap 0.5s
+task.spawn(function()
+    while ScreenGui.Parent do
+        updateAdvisor()
+        task.wait(0.5)
+    end
+end)
