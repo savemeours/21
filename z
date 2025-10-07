@@ -1,0 +1,667 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local VirtualInputManager = nil
+pcall(function() VirtualInputManager = game:GetService("VirtualInputManager") end)
+local VirtualUser = nil
+pcall(function() VirtualUser = game:GetService("VirtualUser") end)
+
+local LocalPlayer = Players.LocalPlayer
+
+-- Configuration
+local CONFIG = {
+    UI = {
+        SIZE = UDim2.new(0, 320, 0, 240),
+        POSITION = UDim2.new(0.5, -160, 0.2, 0),
+        BACKGROUND_COLOR = Color3.fromRGB(25, 25, 35),
+        ACCENT_COLOR = Color3.fromRGB(0, 150, 255),
+        SUCCESS_COLOR = Color3.fromRGB(50, 200, 100),
+        WARNING_COLOR = Color3.fromRGB(255, 200, 50),
+        DANGER_COLOR = Color3.fromRGB(220, 80, 80),
+        CARD_SAFE_COLOR = Color3.fromRGB(50, 200, 50),
+        CARD_DANGER_COLOR = Color3.fromRGB(220, 80, 80)
+    },
+    AUTO_CLICK = {
+        DELAY = 1,
+        DOUBLE_CLICK_INTERVAL = 0.1
+    },
+    GAME = {
+        MAX_CARD_VALUE = 11,
+        TARGET_SCORE = 21
+    }
+}
+
+-- Create main UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "AdvancedCardCounter"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+local MainContainer = Instance.new("Frame")
+MainContainer.Size = CONFIG.UI.SIZE
+MainContainer.Position = CONFIG.UI.POSITION
+MainContainer.BackgroundColor3 = CONFIG.UI.BACKGROUND_COLOR
+MainContainer.BorderSizePixel = 0
+MainContainer.Active = true
+MainContainer.Draggable = true
+MainContainer.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner", MainContainer)
+UICorner.CornerRadius = UDim.new(0, 12)
+
+local UIStroke = Instance.new("UIStroke", MainContainer)
+UIStroke.Color = Color3.fromRGB(60, 60, 80)
+UIStroke.Thickness = 2
+
+-- Header Section
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 36)
+Header.Position = UDim2.new(0, 0, 0, 0)
+Header.BackgroundTransparency = 1
+Header.Parent = MainContainer
+
+local StatusIndicator = Instance.new("Frame")
+StatusIndicator.Size = UDim2.new(0, 8, 0, 8)
+StatusIndicator.Position = UDim2.new(0, 12, 0, 14)
+StatusIndicator.BackgroundColor3 = CONFIG.UI.WARNING_COLOR
+StatusIndicator.Parent = Header
+local StatusCorner = Instance.new("UICorner", StatusIndicator)
+StatusCorner.CornerRadius = UDim.new(1, 0)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -80, 1, 0)
+Title.Position = UDim2.new(0, 30, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "CARD COUNTER PRO"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- Control Buttons
+local ControlButtons = Instance.new("Frame")
+ControlButtons.Size = UDim2.new(0, 72, 1, 0)
+ControlButtons.Position = UDim2.new(1, -76, 0, 0)
+ControlButtons.BackgroundTransparency = 1
+ControlButtons.Parent = Header
+
+local function createControlButton(name, text, color, position)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 28, 0, 28)
+    button.Position = position
+    button.BackgroundColor3 = color
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 14
+    button.AutoButtonColor = false
+    button.Parent = ControlButtons
+    
+    local corner = Instance.new("UICorner", button)
+    corner.CornerRadius = UDim.new(0, 6)
+    
+    local stroke = Instance.new("UIStroke", button)
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Thickness = 1
+    stroke.Transparency = 0.8
+    
+    return button
+end
+
+local AutoButton = createControlButton("Auto", "A", Color3.fromRGB(60, 60, 80), UDim2.new(0, 0, 0, 4))
+local SettingsButton = createControlButton("Settings", "⚙", CONFIG.UI.ACCENT_COLOR, UDim2.new(0, 36, 0, 4))
+local CloseButton = createControlButton("Close", "×", CONFIG.UI.DANGER_COLOR, UDim2.new(0, 36, 0, 36))
+
+-- Recommendation Card
+local RecommendationCard = Instance.new("Frame")
+RecommendationCard.Size = UDim2.new(1, -20, 0, 70)
+RecommendationCard.Position = UDim2.new(0, 10, 0, 44)
+RecommendationCard.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+RecommendationCard.Parent = MainContainer
+local RecCardCorner = Instance.new("UICorner", RecommendationCard)
+RecCardCorner.CornerRadius = UDim.new(0, 8)
+
+local RecommendationLabel = Instance.new("TextLabel")
+RecommendationLabel.Size = UDim2.new(1, 0, 0, 40)
+RecommendationLabel.Position = UDim2.new(0, 0, 0, 0)
+RecommendationLabel.BackgroundTransparency = 1
+RecommendationLabel.Font = Enum.Font.GothamBlack
+RecommendationLabel.TextSize = 22
+RecommendationLabel.Text = "ANALYZING..."
+RecommendationLabel.TextColor3 = CONFIG.UI.WARNING_COLOR
+RecommendationLabel.Parent = RecommendationCard
+
+local SubRecommendation = Instance.new("TextLabel")
+SubRecommendation.Size = UDim2.new(1, -20, 0, 20)
+SubRecommendation.Position = UDim2.new(0, 10, 0, 40)
+SubRecommendation.BackgroundTransparency = 1
+SubRecommendation.Font = Enum.Font.Gotham
+SubRecommendation.TextSize = 12
+SubRecommendation.Text = "Initializing card counter..."
+SubRecommendation.TextColor3 = Color3.fromRGB(180, 180, 200)
+SubRecommendation.TextXAlignment = Enum.TextXAlignment.Left
+SubRecommendation.Parent = RecommendationCard
+
+-- Stats Section
+local StatsSection = Instance.new("Frame")
+StatsSection.Size = UDim2.new(1, -20, 0, 100)
+StatsSection.Position = UDim2.new(0, 10, 0, 124)
+StatsSection.BackgroundTransparency = 1
+StatsSection.Parent = MainContainer
+
+local StatsGrid = Instance.new("UIListLayout")
+StatsGrid.Parent = StatsSection
+StatsGrid.SortOrder = Enum.SortOrder.LayoutOrder
+StatsGrid.Padding = UDim.new(0, 4)
+
+local StatRow1 = Instance.new("Frame")
+StatRow1.Size = UDim2.new(1, 0, 0, 16)
+StatRow1.BackgroundTransparency = 1
+StatRow1.LayoutOrder = 1
+StatRow1.Parent = StatsSection
+
+local YourScoreLabel = Instance.new("TextLabel")
+YourScoreLabel.Size = UDim2.new(0.5, -5, 1, 0)
+YourScoreLabel.Position = UDim2.new(0, 0, 0, 0)
+YourScoreLabel.BackgroundTransparency = 1
+YourScoreLabel.Font = Enum.Font.Gotham
+YourScoreLabel.TextSize = 12
+YourScoreLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+YourScoreLabel.TextXAlignment = Enum.TextXAlignment.Left
+YourScoreLabel.Text = "Your Score: --/--"
+YourScoreLabel.Parent = StatRow1
+
+local OpponentScoreLabel = Instance.new("TextLabel")
+OpponentScoreLabel.Size = UDim2.new(0.5, -5, 1, 0)
+OpponentScoreLabel.Position = UDim2.new(0.5, 5, 0, 0)
+OpponentScoreLabel.BackgroundTransparency = 1
+OpponentScoreLabel.Font = Enum.Font.Gotham
+OpponentScoreLabel.TextSize = 12
+OpponentScoreLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+OpponentScoreLabel.TextXAlignment = Enum.TextXAlignment.Left
+OpponentScoreLabel.Text = "Opponent: --"
+OpponentScoreLabel.Parent = StatRow1
+
+local StatRow2 = Instance.new("Frame")
+StatRow2.Size = UDim2.new(1, 0, 0, 16)
+StatRow2.BackgroundTransparency = 1
+StatRow2.LayoutOrder = 2
+StatRow2.Parent = StatsSection
+
+local SafeChanceLabel = Instance.new("TextLabel")
+SafeChanceLabel.Size = UDim2.new(0.5, -5, 1, 0)
+SafeChanceLabel.Position = UDim2.new(0, 0, 0, 0)
+SafeChanceLabel.BackgroundTransparency = 1
+SafeChanceLabel.Font = Enum.Font.Gotham
+SafeChanceLabel.TextSize = 12
+SafeChanceLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+SafeChanceLabel.TextXAlignment = Enum.TextXAlignment.Left
+SafeChanceLabel.Text = "Safe Chance: --%"
+SafeChanceLabel.Parent = StatRow2
+
+local RiskLevelLabel = Instance.new("TextLabel")
+RiskLevelLabel.Size = UDim2.new(0.5, -5, 1, 0)
+RiskLevelLabel.Position = UDim2.new(0.5, 5, 0, 0)
+RiskLevelLabel.BackgroundTransparency = 1
+RiskLevelLabel.Font = Enum.Font.Gotham
+RiskLevelLabel.TextSize = 12
+RiskLevelLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+RiskLevelLabel.TextXAlignment = Enum.TextXAlignment.Left
+RiskLevelLabel.Text = "Risk: Medium"
+RiskLevelLabel.Parent = StatRow2
+
+local CardsRemainingLabel = Instance.new("TextLabel")
+CardsRemainingLabel.Size = UDim2.new(1, 0, 0, 32)
+CardsRemainingLabel.Position = UDim2.new(0, 0, 0, 40)
+CardsRemainingLabel.BackgroundTransparency = 1
+CardsRemainingLabel.Font = Enum.Font.Gotham
+CardsRemainingLabel.TextSize = 11
+CardsRemainingLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
+CardsRemainingLabel.TextXAlignment = Enum.TextXAlignment.Left
+CardsRemainingLabel.TextYAlignment = Enum.TextYAlignment.Top
+CardsRemainingLabel.TextWrapped = true
+CardsRemainingLabel.RichText = true
+CardsRemainingLabel.Text = "Remaining Cards: --"
+CardsRemainingLabel.LayoutOrder = 3
+CardsRemainingLabel.Parent = StatsSection
+
+-- Settings Panel
+local SettingsPanel = Instance.new("Frame")
+SettingsPanel.Size = UDim2.new(1, -40, 0, 140)
+SettingsPanel.Position = UDim2.new(0, 20, 0.5, -70)
+SettingsPanel.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+SettingsPanel.Visible = false
+SettingsPanel.Parent = MainContainer
+local SettingsCorner = Instance.new("UICorner", SettingsPanel)
+SettingsCorner.CornerRadius = UDim.new(0, 8)
+
+local SettingsHeader = Instance.new("TextLabel")
+SettingsHeader.Size = UDim2.new(1, 0, 0, 32)
+SettingsHeader.Position = UDim2.new(0, 0, 0, 0)
+SettingsHeader.BackgroundTransparency = 1
+SettingsHeader.Text = "SETTINGS"
+SettingsHeader.Font = Enum.Font.GothamBold
+SettingsHeader.TextSize = 16
+SettingsHeader.TextColor3 = Color3.fromRGB(255, 255, 255)
+SettingsHeader.Parent = SettingsPanel
+
+-- Risk Slider
+local RiskSliderContainer = Instance.new("Frame")
+RiskSliderContainer.Size = UDim2.new(1, -20, 0, 50)
+RiskSliderContainer.Position = UDim2.new(0, 10, 0, 35)
+RiskSliderContainer.BackgroundTransparency = 1
+RiskSliderContainer.Parent = SettingsPanel
+
+local RiskTextLabel = Instance.new("TextLabel")
+RiskTextLabel.Size = UDim2.new(1, 0, 0, 20)
+RiskTextLabel.Position = UDim2.new(0, 0, 0, 0)
+RiskTextLabel.BackgroundTransparency = 1
+RiskTextLabel.Text = "Risk Tolerance: Medium"
+RiskTextLabel.Font = Enum.Font.Gotham
+RiskTextLabel.TextSize = 12
+RiskTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+RiskTextLabel.TextXAlignment = Enum.TextXAlignment.Left
+RiskTextLabel.Parent = RiskSliderContainer
+
+local SliderTrack = Instance.new("Frame")
+SliderTrack.Size = UDim2.new(1, 0, 0, 6)
+SliderTrack.Position = UDim2.new(0, 0, 1, -10)
+SliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+SliderTrack.Parent = RiskSliderContainer
+local TrackCorner = Instance.new("UICorner", SliderTrack)
+TrackCorner.CornerRadius = UDim.new(0, 3)
+
+local SliderThumb = Instance.new("Frame")
+SliderThumb.Size = UDim2.new(0, 16, 0, 16)
+SliderThumb.Position = UDim2.new(0.5, -8, 1, -13)
+SliderThumb.BackgroundColor3 = CONFIG.UI.ACCENT_COLOR
+SliderThumb.Parent = RiskSliderContainer
+local ThumbCorner = Instance.new("UICorner", SliderThumb)
+ThumbCorner.CornerRadius = UDim.new(1, 0)
+
+local ApplySettingsButton = Instance.new("TextButton")
+ApplySettingsButton.Size = UDim2.new(0, 100, 0, 28)
+ApplySettingsButton.Position = UDim2.new(0.5, -50, 1, -35)
+ApplySettingsButton.BackgroundColor3 = CONFIG.UI.ACCENT_COLOR
+ApplySettingsButton.Text = "APPLY"
+ApplySettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ApplySettingsButton.Font = Enum.Font.GothamBold
+ApplySettingsButton.TextSize = 14
+ApplySettingsButton.Parent = SettingsPanel
+local ApplyCorner = Instance.new("UICorner", ApplySettingsButton)
+ApplyCorner.CornerRadius = UDim.new(0, 6)
+
+-- UI Interactions
+local dragging, dragStart, startPos
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainContainer.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+Header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local delta = input.Position - dragStart
+        MainContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Button animations
+local function animateButton(button)
+    local originalSize = button.Size
+    local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    
+    local shrink = TweenService:Create(button, tweenInfo, {Size = originalSize - UDim2.new(0, 2, 0, 2)})
+    local grow = TweenService:Create(button, tweenInfo, {Size = originalSize})
+    
+    shrink:Play()
+    shrink.Completed:Connect(function()
+        grow:Play()
+    end)
+end
+
+-- Auto-click functionality
+local AutoOn = false
+local AutoLoopThread = nil
+local AutoAvailable = (VirtualInputManager ~= nil) or (VirtualUser ~= nil)
+local RiskValue = 0.5
+
+local function setAutoAppearance(enabled)
+    if enabled then
+        AutoButton.BackgroundColor3 = CONFIG.UI.SUCCESS_COLOR
+        StatusIndicator.BackgroundColor3 = CONFIG.UI.SUCCESS_COLOR
+    else
+        AutoButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        StatusIndicator.BackgroundColor3 = CONFIG.UI.WARNING_COLOR
+    end
+end
+
+local function performDoubleClick(buttonIndex)
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    
+    local vx = camera.ViewportSize.X / 2
+    local vy = camera.ViewportSize.Y / 2
+    
+    local function doClick()
+        if VirtualInputManager then
+            VirtualInputManager:SendMouseButtonEvent(vx, vy, buttonIndex, true, game, 1)
+            task.wait(0.02)
+            VirtualInputManager:SendMouseButtonEvent(vx, vy, buttonIndex, false, game, 1)
+        elseif VirtualUser then
+            VirtualUser:CaptureController()
+            if buttonIndex == 0 then
+                VirtualUser:Button1Down(Vector2.new(vx, vy))
+                task.wait(0.02)
+                VirtualUser:Button1Up(Vector2.new(vx, vy))
+            elseif buttonIndex == 1 and VirtualUser.Button2Down then
+                VirtualUser:Button2Down(Vector2.new(vx, vy))
+                task.wait(0.02)
+                VirtualUser:Button2Up(Vector2.new(vx, vy))
+            end
+        end
+    end
+    
+    doClick()
+    task.wait(CONFIG.AUTO_CLICK.DOUBLE_CLICK_INTERVAL)
+    doClick()
+end
+
+local function startAutoLoop()
+    if AutoLoopThread then return end
+    
+    AutoLoopThread = task.spawn(function()
+        while AutoOn and ScreenGui.Parent do
+            local rec = RecommendationLabel.Text:upper()
+            
+            if rec:find("TAKE") then
+                performDoubleClick(0)
+            elseif rec:find("HOLD") then
+                performDoubleClick(1)
+            end
+            
+            task.wait(CONFIG.AUTO_CLICK.DELAY)
+        end
+        AutoLoopThread = nil
+    end)
+end
+
+local function stopAutoLoop()
+    AutoOn = false
+end
+
+-- Button click handlers
+AutoButton.MouseButton1Click:Connect(function()
+    animateButton(AutoButton)
+    
+    if not AutoAvailable then
+        local originalColor = AutoButton.BackgroundColor3
+        AutoButton.BackgroundColor3 = CONFIG.UI.DANGER_COLOR
+        task.delay(0.5, function()
+            if AutoButton then
+                AutoButton.BackgroundColor3 = originalColor
+            end
+        end)
+        SubRecommendation.Text = "Auto-click not available"
+        return
+    end
+    
+    AutoOn = not AutoOn
+    setAutoAppearance(AutoOn)
+    
+    if AutoOn then
+        startAutoLoop()
+        SubRecommendation.Text = "Auto-play: ENABLED"
+    else
+        stopAutoLoop()
+        SubRecommendation.Text = "Auto-play: DISABLED"
+    end
+end)
+
+SettingsButton.MouseButton1Click:Connect(function()
+    animateButton(SettingsButton)
+    SettingsPanel.Visible = not SettingsPanel.Visible
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    animateButton(CloseButton)
+    ScreenGui:Destroy()
+    if script then script:Destroy() end
+end)
+
+ApplySettingsButton.MouseButton1Click:Connect(function()
+    animateButton(ApplySettingsButton)
+    SettingsPanel.Visible = false
+end)
+
+-- Slider functionality
+SliderThumb.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local connection
+        local function updateSlider()
+            local mousePos = UserInputService:GetMouseLocation()
+            local trackAbsPos = SliderTrack.AbsolutePosition
+            local trackAbsSize = SliderTrack.AbsoluteSize
+            
+            local relativeX = (mousePos.X - trackAbsPos.X) / trackAbsSize.X
+            relativeX = math.clamp(relativeX, 0, 1)
+            
+            RiskValue = relativeX
+            SliderThumb.Position = UDim2.new(RiskValue, -8, 1, -13)
+            
+            local riskLevel
+            if RiskValue < 0.33 then
+                riskLevel = "Low"
+            elseif RiskValue < 0.66 then
+                riskLevel = "Medium"
+            else
+                riskLevel = "High"
+            end
+            
+            RiskTextLabel.Text = "Risk Tolerance: " .. riskLevel
+        end
+        
+        updateSlider()
+        connection = RunService.RenderStepped:Connect(updateSlider)
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                connection:Disconnect()
+            end
+        end)
+    end
+end)
+
+-- Card counting algorithm
+local function updateAdvisor()
+    local cardsContainer = workspace.Room and workspace.Room:FindFirstChild("Cards")
+    local opponentRoot = workspace.Room and workspace.Room.Opponent and workspace.Room.Opponent:FindFirstChild("HumanoidRootPart")
+    local myCamera = workspace.Room and workspace.Room:FindFirstChild("Camera")
+
+    local goalValue
+    local sumLabel = workspace.Room
+        and workspace.Room.Main
+        and workspace.Room.Main:FindFirstChild("YourCardsSum")
+        and workspace.Room.Main.YourCardsSum:FindFirstChild("SurfaceGui")
+        and workspace.Room.Main.YourCardsSum.SurfaceGui:FindFirstChild("TextLabel")
+    
+    if sumLabel and sumLabel:IsA("TextLabel") then
+        goalValue = tonumber((sumLabel.Text or ""):match("%d+/(%d+)")) or CONFIG.GAME.TARGET_SCORE
+    else
+        goalValue = CONFIG.GAME.TARGET_SCORE
+    end
+
+    if not (cardsContainer and opponentRoot and myCamera) then
+        RecommendationLabel.Text = "WAITING"
+        RecommendationLabel.TextColor3 = CONFIG.UI.WARNING_COLOR
+        SubRecommendation.Text = "Waiting for game to start..."
+        YourScoreLabel.Text = "Your Score: --/--"
+        OpponentScoreLabel.Text = "Opponent: --"
+        SafeChanceLabel.Text = "Safe Chance: --%"
+        CardsRemainingLabel.Text = "Remaining Cards: --"
+        return
+    end
+
+    -- Analyze cards
+    local myCards, opponentCards = {}, {}
+    for _, obj in ipairs(cardsContainer:GetChildren()) do
+        if obj.Name == "Card" and obj:IsA("BasePart") then
+            local scoreLabel = obj:FindFirstChild("Score") and obj.Score:FindFirstChild("TextLabel")
+            local faceValue = scoreLabel and scoreLabel.Text or "[Hidden]"
+            local distToOpponent = (obj.Position - opponentRoot.Position).Magnitude
+            local distToMe = (obj.Position - myCamera.Position).Magnitude
+            local owner = (distToOpponent < distToMe) and "Opponent" or "Me"
+            
+            if owner == "Me" then
+                table.insert(myCards, faceValue)
+            else
+                table.insert(opponentCards, faceValue)
+            end
+        end
+    end
+
+    local function cardValue(v)
+        if v == "L" then return 99 end
+        return tonumber(v) or 0
+    end
+
+    -- Calculate sums
+    local mySum = 0
+    for _, v in ipairs(myCards) do
+        mySum = mySum + cardValue(v)
+    end
+
+    local oppKnownSum, oppHiddenCount = 0, 0
+    for _, v in ipairs(opponentCards) do
+        local n = cardValue(v)
+        if n > 0 and n ~= 99 then
+            oppKnownSum = oppKnownSum + n
+        else
+            oppHiddenCount = oppHiddenCount + 1
+        end
+    end
+
+    -- Deck analysis
+    local deck = {}
+    for i = 1, CONFIG.GAME.MAX_CARD_VALUE do
+        table.insert(deck, i)
+    end
+
+    local visibleCards = {}
+    for _, v in ipairs(myCards) do
+        local n = tonumber(v)
+        if n then table.insert(visibleCards, n) end
+    end
+    for _, v in ipairs(opponentCards) do
+        local n = tonumber(v)
+        if n then table.insert(visibleCards, n) end
+    end
+    
+    for _, cardValue in ipairs(visibleCards) do
+        for i, deckCard in ipairs(deck) do
+            if deckCard == cardValue then
+                table.remove(deck, i)
+                break
+            end
+        end
+    end
+
+    -- Probability calculation
+    local safeDraws, bustDraws = 0, 0
+    for _, value in ipairs(deck) do
+        if mySum + value <= goalValue then
+            safeDraws = safeDraws + 1
+        else
+            bustDraws = bustDraws + 1
+        end
+    end
+
+    local totalRemaining = #deck
+    local safeChance = (totalRemaining > 0) and (safeDraws / totalRemaining) or 0
+
+    -- Opponent prediction
+    local sumOfDeck = 0
+    for _, v in ipairs(deck) do sumOfDeck = sumOfDeck + v end
+    local avgDeckValue = (totalRemaining > 0) and (sumOfDeck / totalRemaining) or 0
+    local oppExpectedSum = oppKnownSum + (oppHiddenCount * avgDeckValue)
+
+    -- Decision making
+    local pointsNeeded = goalValue - mySum
+    local opponentBust = oppKnownSum > goalValue
+
+    local riskAdjustedThreshold = 0.5 - (RiskValue * 0.3)
+    
+    local recommendation, reason, color
+    
+    if opponentBust then
+        recommendation = "HOLD"
+        reason = "Opponent busted"
+        color = CONFIG.UI.SUCCESS_COLOR
+    elseif mySum > goalValue then
+        recommendation = "BUST"
+        reason = "You busted"
+        color = CONFIG.UI.DANGER_COLOR
+    elseif mySum == goalValue then
+        recommendation = "HOLD"
+        reason = "Perfect score"
+        color = CONFIG.UI.SUCCESS_COLOR
+    elseif safeChance >= riskAdjustedThreshold then
+        recommendation = "TAKE"
+        reason = string.format("Good odds (%.1f%%)", safeChance * 100)
+        color = CONFIG.UI.SUCCESS_COLOR
+    else
+        recommendation = "HOLD"
+        reason = string.format("Low odds (%.1f%%)", safeChance * 100)
+        color = CONFIG.UI.DANGER_COLOR
+    end
+
+    -- Update UI
+    RecommendationLabel.Text = recommendation
+    RecommendationLabel.TextColor3 = color
+    SubRecommendation.Text = reason
+
+    -- Update stats
+    YourScoreLabel.Text = string.format("Your Score: %d/%d", mySum, goalValue)
+    OpponentScoreLabel.Text = string.format("Opponent: %.1f", oppExpectedSum)
+    SafeChanceLabel.Text = string.format("Safe Chance: %.1f%%", safeChance * 100)
+    
+    local riskLevel = RiskValue < 0.33 and "Low" or RiskValue < 0.66 and "Medium" or "High"
+    RiskLevelLabel.Text = "Risk: " .. riskLevel
+
+    -- Format remaining cards
+    local deckText = ""
+    for i, card in ipairs(deck) do
+        local colorCode = (mySum + card <= goalValue) and CONFIG.UI.CARD_SAFE_COLOR or CONFIG.UI.CARD_DANGER_COLOR
+        local hexColor = string.format("rgb(%d,%d,%d)", 
+            math.floor(colorCode.R * 255), 
+            math.floor(colorCode.G * 255), 
+            math.floor(colorCode.B * 255))
+        deckText = deckText .. string.format('<font color="%s"><b>%d</b></font>', hexColor, card)
+        if i < #deck then deckText = deckText .. ", " end
+    end
+
+    CardsRemainingLabel.Text = string.format("Remaining Cards: %s", deckText)
+end
+
+-- Initialize
+RunService.RenderStepped:Connect(updateAdvisor)
+
+-- Cleanup
+Players.PlayerRemoving:Connect(function(player)
+    if player == LocalPlayer then
+        ScreenGui:Destroy()
+    end
+end)
+
+print("Advanced Card Counter loaded successfully!")
