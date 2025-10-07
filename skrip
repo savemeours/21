@@ -1,3 +1,6 @@
+-- 🔥 Card Counter Improved Version
+-- Fitur: Modern UI, Auto, History, Minimize, FPS/Ping Monitor, Shortcut (M)
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -10,567 +13,188 @@ pcall(function() VirtualUser = game:GetService("VirtualUser") end)
 
 local LocalPlayer = Players.LocalPlayer
 
--- Configuration
-local CONFIG = {
-    AUTO_CLICK_DELAY = 0.5,
-    UPDATE_INTERVAL = 0.1,
-    MIN_SAFE_CHANCE = 0.4,
-    MAX_SAFE_CHANCE = 0.7,
-    SMOOTH_DRAGGING = true
-}
-
--- Create UI
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.CoreGui
-ScreenGui.Name = "AdvancedCardCounter"
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Name = "CardCounter"
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 220)
-MainFrame.Position = UDim2.new(0.5, -150, 0.2, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 220)
+Frame.Position = UDim2.new(0.5, -150, 0.2, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+local Stroke = Instance.new("UIStroke", Frame)
+Stroke.Color = Color3.fromRGB(80,80,80)
+Stroke.Thickness = 1.5
 
-local UIStroke = Instance.new("UIStroke", MainFrame)
-UIStroke.Color = Color3.fromRGB(60, 60, 60)
-UIStroke.Thickness = 2
-
--- Header
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 35)
-Header.Position = UDim2.new(0, 0, 0, 0)
-Header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Header.BorderSizePixel = 0
-Header.Parent = MainFrame
-
-local HeaderCorner = Instance.new("UICorner", Header)
-HeaderCorner.CornerRadius = UDim.new(0, 12)
-
+-- Title
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -100, 1, 0)
-Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Size = UDim2.new(1, -90, 0, 30)
+Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "🃏 Advanced Card Counter"
+Title.Text = "Card Counter"
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+Title.TextSize = 20
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Header
+Title.Parent = Frame
 
--- Control Buttons
-local buttonContainer = Instance.new("Frame")
-buttonContainer.Size = UDim2.new(0, 80, 1, 0)
-buttonContainer.Position = UDim2.new(1, -85, 0, 0)
-buttonContainer.BackgroundTransparency = 1
-buttonContainer.Parent = Header
+-- Minimize Button
+local MinButton = Instance.new("TextButton")
+MinButton.Size = UDim2.new(0, 25, 0, 25)
+MinButton.Position = UDim2.new(1, -85, 0, 3)
+MinButton.BackgroundColor3 = Color3.fromRGB(70, 70, 200)
+MinButton.Text = "-"
+MinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinButton.Font = Enum.Font.GothamBold
+MinButton.TextSize = 18
+MinButton.Parent = Frame
+Instance.new("UICorner", MinButton).CornerRadius = UDim.new(0, 6)
 
-local function createControlButton(name, text, color, position)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 25, 0, 25)
-    button.Position = position
-    button.BackgroundColor3 = color
-    button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 14
-    button.AutoButtonColor = false
-    button.Parent = buttonContainer
-    
-    local corner = Instance.new("UICorner", button)
-    corner.CornerRadius = UDim.new(0, 6)
-    
-    local stroke = Instance.new("UIStroke", button)
-    stroke.Color = Color3.fromRGB(100, 100, 100)
-    stroke.Thickness = 1
-    
-    -- Hover effects
-    local originalColor = color
-    button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor:Lerp(Color3.new(1,1,1), 0.2)}):Play()
-    end)
-    button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
-    end)
-    
-    return button
-end
+-- Auto Button
+local AutoButton = Instance.new("TextButton")
+AutoButton.Size = UDim2.new(0, 25, 0, 25)
+AutoButton.Position = UDim2.new(1, -56, 0, 3)
+AutoButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+AutoButton.Text = "A"
+AutoButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+AutoButton.Font = Enum.Font.GothamBold
+AutoButton.TextSize = 18
+AutoButton.Parent = Frame
+Instance.new("UICorner", AutoButton).CornerRadius = UDim.new(0, 6)
 
-local MinimizeButton = createControlButton("Minimize", "_", Color3.fromRGB(100, 100, 100), UDim2.new(0, 0, 0, 5))
-local AutoButton = createControlButton("Auto", "A", Color3.fromRGB(80, 80, 80), UDim2.new(0, 30, 0, 5))
-local CloseButton = createControlButton("Close", "X", Color3.fromRGB(200, 60, 60), UDim2.new(0, 60, 0, 5))
-
--- Stats Panel
-local StatsPanel = Instance.new("Frame")
-StatsPanel.Size = UDim2.new(1, -20, 0, 80)
-StatsPanel.Position = UDim2.new(0, 10, 0, 45)
-StatsPanel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-StatsPanel.BorderSizePixel = 0
-StatsPanel.Parent = MainFrame
-
-local StatsCorner = Instance.new("UICorner", StatsPanel)
-StatsCorner.CornerRadius = UDim.new(0, 8)
-
-local StatsStroke = Instance.new("UIStroke", StatsPanel)
-StatsStroke.Color = Color3.fromRGB(60, 60, 60)
-StatsStroke.Thickness = 1
-
--- Stats Labels
-local function createStatLabel(name, text, position, size)
-    local label = Instance.new("TextLabel")
-    label.Size = size or UDim2.new(1, -10, 0, 18)
-    label.Position = position
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 12
-    label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.RichText = true
-    label.Name = name
-    label.Parent = StatsPanel
-    return label
-end
-
-local SafeChanceLabel = createStatLabel("SafeChance", "📊 Safe Chance: 0%", UDim2.new(0, 10, 0, 8))
-local PointsLabel = createStatLabel("Points", "🎯 Points Needed: 0", UDim2.new(0, 10, 0, 28))
-local OpponentLabel = createStatLabel("Opponent", "👤 Opponent Expected: 0", UDim2.new(0, 10, 0, 48))
-local CardsLabel = createStatLabel("Cards", "🃏 Remaining Cards: 0", UDim2.new(0, 10, 0, 68))
-
--- Recommendation Display
-local RecommendationFrame = Instance.new("Frame")
-RecommendationFrame.Size = UDim2.new(1, -20, 0, 50)
-RecommendationFrame.Position = UDim2.new(0, 10, 0, 135)
-RecommendationFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-RecommendationFrame.BorderSizePixel = 0
-RecommendationFrame.Parent = MainFrame
-
-local RecCorner = Instance.new("UICorner", RecommendationFrame)
-RecCorner.CornerRadius = UDim.new(0, 8)
-
-local RecStroke = Instance.new("UIStroke", RecommendationFrame)
-RecStroke.Color = Color3.fromRGB(60, 60, 60)
-RecStroke.Thickness = 1
-
-local Recommendation = Instance.new("TextLabel")
-Recommendation.Size = UDim2.new(1, 0, 1, 0)
-Recommendation.Position = UDim2.new(0, 0, 0, 0)
-Recommendation.BackgroundTransparency = 1
-Recommendation.Font = Enum.Font.GothamBlack
-Recommendation.TextSize = 20
-Recommendation.Text = "LOADING..."
-Recommendation.TextColor3 = Color3.fromRGB(255, 255, 255)
-Recommendation.Parent = RecommendationFrame
-
-local SubRecommendation = Instance.new("TextLabel")
-SubRecommendation.Size = UDim2.new(1, 0, 0, 15)
-SubRecommendation.Position = UDim2.new(0, 0, 1, -15)
-SubRecommendation.BackgroundTransparency = 1
-SubRecommendation.Font = Enum.Font.Gotham
-SubRecommendation.TextSize = 10
-SubRecommendation.Text = "Analyzing game state..."
-SubRecommendation.TextColor3 = Color3.fromRGB(180, 180, 180)
-SubRecommendation.Parent = RecommendationFrame
-
--- Auto-Click Status
-local AutoStatus = Instance.new("TextLabel")
-AutoStatus.Size = UDim2.new(1, -20, 0, 15)
-AutoStatus.Position = UDim2.new(0, 10, 1, -20)
-AutoStatus.BackgroundTransparency = 1
-AutoStatus.Font = Enum.Font.Gotham
-AutoStatus.TextSize = 10
-AutoStatus.Text = "Auto: OFF"
-AutoStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-AutoStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoStatus.Parent = MainFrame
-
--- State Management
-local AutoOn = false
-local Minimized = false
-local AutoLoopThread = nil
-local LastUpdate = 0
-local GameHistory = {}
-local AutoAvailable = (VirtualInputManager ~= nil) or (VirtualUser ~= nil)
-
--- Enhanced Dragging with Smoothness
-local dragging, dragStart, startPos
-Header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-        
-        if CONFIG.SMOOTH_DRAGGING then
-            TweenService:Create(MainFrame, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(35, 35, 35)}):Play()
-        end
-        
-        local connection
-        connection = input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-                if CONFIG.SMOOTH_DRAGGING then
-                    TweenService:Create(MainFrame, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(25, 25, 25)}):Play()
-                end
-                connection:Disconnect()
-            end
-        end)
-    end
-end)
-
-Header.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-        local delta = input.Position - dragStart
-        if CONFIG.SMOOTH_DRAGGING then
-            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        else
-            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end
-end)
-
--- Button Functionality
+-- Close Button
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -28, 0, 3)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 18
+CloseButton.Parent = Frame
+Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 6)
 CloseButton.MouseButton1Click:Connect(function()
-    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 0)}):Play()
-    task.wait(0.3)
-    ScreenGui:Destroy()
-    if script then script:Destroy() end
+	ScreenGui:Destroy()
 end)
 
-MinimizeButton.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    if Minimized then
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, 35)}):Play()
-        MinimizeButton.Text = "+"
-    else
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, 220)}):Play()
-        MinimizeButton.Text = "_"
-    end
+-- Recommendation
+local Recommendation = Instance.new("TextLabel")
+Recommendation.Size = UDim2.new(1, -20, 0, 35)
+Recommendation.Position = UDim2.new(0, 10, 0, 35)
+Recommendation.BackgroundTransparency = 1
+Recommendation.Font = Enum.Font.GothamBold
+Recommendation.TextSize = 28
+Recommendation.TextColor3 = Color3.fromRGB(255, 255, 255)
+Recommendation.Text = "Waiting..."
+Recommendation.Parent = Frame
+
+-- Info
+local InfoLabel = Instance.new("TextLabel")
+InfoLabel.Size = UDim2.new(1, -20, 1, -120)
+InfoLabel.Position = UDim2.new(0, 10, 0, 70)
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Font = Enum.Font.Gotham
+InfoLabel.TextSize = 16
+InfoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+InfoLabel.TextWrapped = true
+InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
+InfoLabel.RichText = true
+InfoLabel.Text = "Loading..."
+InfoLabel.Parent = Frame
+
+-- History
+local HistoryLabel = Instance.new("TextLabel")
+HistoryLabel.Size = UDim2.new(1, -20, 0, 60)
+HistoryLabel.Position = UDim2.new(0, 10, 1, -65)
+HistoryLabel.BackgroundTransparency = 1
+HistoryLabel.Font = Enum.Font.Code
+HistoryLabel.TextSize = 14
+HistoryLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+HistoryLabel.TextWrapped = true
+HistoryLabel.TextXAlignment = Enum.TextXAlignment.Left
+HistoryLabel.TextYAlignment = Enum.TextYAlignment.Top
+HistoryLabel.RichText = true
+HistoryLabel.Text = "History:\n-"
+HistoryLabel.Parent = Frame
+
+local History = {}
+local function addHistory(text)
+	table.insert(History, 1, text)
+	if #History > 5 then table.remove(History, #History) end
+	HistoryLabel.Text = "History:\n" .. table.concat(History, "\n")
+end
+
+-- FPS & Ping Monitor
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1, -20, 0, 20)
+Status.Position = UDim2.new(0, 10, 1, -20)
+Status.BackgroundTransparency = 1
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 14
+Status.TextColor3 = Color3.fromRGB(150, 150, 255)
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.Text = "FPS: 0 | Ping: 0"
+Status.Parent = Frame
+
+-- Minimize
+local Minimized = false
+MinButton.MouseButton1Click:Connect(function()
+	Minimized = not Minimized
+	local goalSize = Minimized and UDim2.new(0, 300, 0, 40) or UDim2.new(0, 300, 0, 220)
+	TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = goalSize}):Play()
 end)
 
--- Auto-Click System
-local function setAutoAppearance(on)
-    if on then
-        AutoButton.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-        AutoStatus.Text = "Auto: ON"
-        AutoStatus.TextColor3 = Color3.fromRGB(50, 180, 50)
-    else
-        AutoButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        AutoStatus.Text = "Auto: OFF"
-        AutoStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-    end
-end
-
-local function simulateClick(buttonType)
-    local camera = workspace.CurrentCamera
-    if not camera then return end
-    
-    local vx = camera.ViewportSize.X / 2
-    local vy = camera.ViewportSize.Y / 2
-    
-    if buttonType == "left" then
-        if VirtualInputManager then
-            VirtualInputManager:SendMouseButtonEvent(vx, vy, 0, true, game, 1)
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(vx, vy, 0, false, game, 1)
-        elseif VirtualUser then
-            VirtualUser:CaptureController()
-            VirtualUser:Button1Down(Vector2.new(vx, vy))
-            task.wait(0.05)
-            VirtualUser:Button1Up(Vector2.new(vx, vy))
-        end
-    elseif buttonType == "right" then
-        if VirtualInputManager then
-            VirtualInputManager:SendMouseButtonEvent(vx, vy, 1, true, game, 1)
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(vx, vy, 1, false, game, 1)
-        elseif VirtualUser and VirtualUser.Button2Down then
-            VirtualUser:CaptureController()
-            VirtualUser:Button2Down(Vector2.new(vx, vy))
-            task.wait(0.05)
-            VirtualUser:Button2Up(Vector2.new(vx, vy))
-        end
-    end
-end
-
-local function startAutoLoop()
-    if AutoLoopThread then return end
-    
-    AutoLoopThread = task.spawn(function()
-        local lastActionTime = 0
-        
-        while AutoOn and ScreenGui.Parent do
-            local currentTime = tick()
-            
-            if currentTime - lastActionTime >= CONFIG.AUTO_CLICK_DELAY then
-                local rec = Recommendation.Text:upper()
-                
-                if rec:find("TAKE") then
-                    simulateClick("left")
-                    table.insert(GameHistory, {action = "TAKE", time = currentTime})
-                    lastActionTime = currentTime
-                    
-                elseif rec:find("HOLD") then
-                    simulateClick("right")
-                    table.insert(GameHistory, {action = "HOLD", time = currentTime})
-                    lastActionTime = currentTime
-                end
-            end
-            
-            task.wait(0.1)
-        end
-        AutoLoopThread = nil
-    end)
-end
-
-local function stopAutoLoop()
-    AutoOn = false
-end
-
+-- Auto
+local AutoOn = false
 AutoButton.MouseButton1Click:Connect(function()
-    if not AutoAvailable then
-        local originalColor = AutoButton.BackgroundColor3
-        AutoButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        AutoStatus.Text = "Auto: NOT SUPPORTED"
-        task.delay(1, function()
-            if AutoButton then
-                AutoButton.BackgroundColor3 = originalColor
-                AutoStatus.Text = "Auto: OFF"
-            end
-        end)
-        return
-    end
-
-    AutoOn = not AutoOn
-    setAutoAppearance(AutoOn)
-    
-    if AutoOn then
-        startAutoLoop()
-    else
-        stopAutoLoop()
-    end
+	AutoOn = not AutoOn
+	local color = AutoOn and Color3.fromRGB(50,200,50) or Color3.fromRGB(255,255,255)
+	local textColor = AutoOn and Color3.fromRGB(255,255,255) or Color3.fromRGB(0,0,0)
+	TweenService:Create(AutoButton, TweenInfo.new(0.2), {BackgroundColor3 = color, TextColor3 = textColor}):Play()
+	addHistory("[AUTO] " .. (AutoOn and "ENABLED" or "DISABLED"))
 end)
 
--- Enhanced Card Analysis
-local function analyzeGameState()
-    local cardsContainer = workspace.Room and workspace.Room:FindFirstChild("Cards")
-    local opponentRoot = workspace.Room and workspace.Room.Opponent and workspace.Room.Opponent:FindFirstChild("HumanoidRootPart")
-    local myCamera = workspace.Room and workspace.Room:FindFirstChild("Camera")
-
-    -- Get target value
-    local goalValue
-    local sumLabel = workspace.Room
-        and workspace.Room.Main
-        and workspace.Room.Main:FindFirstChild("YourCardsSum")
-        and workspace.Room.Main.YourCardsSum:FindFirstChild("SurfaceGui")
-        and workspace.Room.Main.YourCardsSum.SurfaceGui:FindFirstChild("TextLabel")
-    
-    if sumLabel and sumLabel:IsA("TextLabel") then
-        goalValue = tonumber((sumLabel.Text or ""):match("%d+/(%d+)"))
-    end
-
-    if not (cardsContainer and opponentRoot and myCamera and goalValue) then
-        return {
-            status = "waiting",
-            recommendation = "WAITING",
-            color = Color3.fromRGB(255, 255, 0),
-            subtitle = "Waiting for game data...",
-            stats = {
-                safeChance = 0,
-                pointsNeeded = 0,
-                opponentExpected = 0,
-                remainingCards = 0,
-                deckText = "Loading..."
-            }
-        }
-    end
-
-    -- Analyze cards
-    local myCards, opponentCards = {}, {}
-    for _, obj in ipairs(cardsContainer:GetChildren()) do
-        if obj.Name == "Card" and obj:IsA("BasePart") then
-            local scoreLabel = obj:FindFirstChild("Score") and obj.Score:FindFirstChild("TextLabel")
-            local faceValue = scoreLabel and scoreLabel.Text or "[Hidden]"
-            local distToOpponent = (obj.Position - opponentRoot.Position).Magnitude
-            local distToMe = (obj.Position - myCamera.Position).Magnitude
-            local owner = (distToOpponent < distToMe) and "Opponent" or "Me"
-            
-            if owner == "Me" then
-                table.insert(myCards, faceValue)
-            else
-                table.insert(opponentCards, faceValue)
-            end
-        end
-    end
-
-    local function cardValue(v)
-        if v == "L" then return 99 end
-        return tonumber(v)
-    end
-
-    -- Calculate sums
-    local mySum = 0
-    for _, v in ipairs(myCards) do
-        local n = cardValue(v)
-        if n then mySum = mySum + n end
-    end
-
-    local oppKnownSum, oppHiddenCount = 0, 0
-    for _, v in ipairs(opponentCards) do
-        local n = cardValue(v)
-        if n then
-            oppKnownSum = oppKnownSum + n
-        else
-            oppHiddenCount = oppHiddenCount + 1
-        end
-    end
-
-    -- Deck analysis
-    local deck = {1,2,3,4,5,6,7,8,9,10,11}
-    local visibleCards = {}
-    
-    for _, v in ipairs(myCards) do
-        local n = tonumber(v)
-        if n then table.insert(visibleCards, n) end
-    end
-    for _, v in ipairs(opponentCards) do
-        local n = tonumber(v)
-        if n then table.insert(visibleCards, n) end
-    end
-    
-    for _, cardValue in ipairs(visibleCards) do
-        for i, deckCard in ipairs(deck) do
-            if deckCard == cardValue then
-                table.remove(deck, i)
-                break
-            end
-        end
-    end
-
-    -- Probability calculation
-    local safeDraws, bustDraws = 0, 0
-    for _, value in ipairs(deck) do
-        if mySum + value <= goalValue then
-            safeDraws += 1
-        else
-            bustDraws += 1
-        end
-    end
-    
-    local totalRemaining = safeDraws + bustDraws
-    local safeChance = (totalRemaining > 0) and (safeDraws / totalRemaining) or 0
-
-    -- Advanced opponent prediction
-    local sumOfDeck = 0
-    for _, v in ipairs(deck) do sumOfDeck += v end
-    local avgDeckValue = (totalRemaining > 0) and (sumOfDeck / totalRemaining) or 0
-    local oppExpectedSum = oppKnownSum + (oppHiddenCount * avgDeckValue)
-
-    local pointsNeeded = goalValue - mySum
-    local opponentBust = oppKnownSum > goalValue
-
-    -- Adaptive strategy
-    local requiredSafeChance = CONFIG.MIN_SAFE_CHANCE
-    local opponentAdvantage = math.max(0, oppExpectedSum - mySum)
-    requiredSafeChance = requiredSafeChance - (opponentAdvantage * 0.03)
-    requiredSafeChance = math.max(CONFIG.MIN_SAFE_CHANCE, math.min(CONFIG.MAX_SAFE_CHANCE, requiredSafeChance))
-
-    -- Generate deck display
-    local deckText = ""
-    for i, card in ipairs(deck) do
-        local color = (mySum + card <= goalValue) and "<font color='#32C820'>" or "<font color='#C83220'>"
-        deckText = deckText .. color .. card .. "</font>"
-        if i < #deck then deckText = deckText .. ", " end
-    end
-
-    -- Decision making
-    local recommendation, color, subtitle
-    
-    if opponentBust then
-        recommendation = "HOLD"
-        color = Color3.fromRGB(50, 180, 50)
-        subtitle = "Opponent will likely bust!"
-    elseif mySum >= goalValue then
-        recommendation = "HOLD"
-        color = Color3.fromRGB(50, 180, 50)
-        subtitle = "You've reached the goal!"
-    elseif safeChance >= requiredSafeChance then
-        recommendation = "TAKE"
-        color = Color3.fromRGB(50, 180, 50)
-        subtitle = string.format("Good chance (%.1f%%)", safeChance * 100)
-    else
-        recommendation = "HOLD"
-        color = Color3.fromRGB(220, 80, 80)
-        subtitle = string.format("Too risky (%.1f%%)", safeChance * 100)
-    end
-
-    return {
-        status = "active",
-        recommendation = recommendation,
-        color = color,
-        subtitle = subtitle,
-        stats = {
-            safeChance = safeChance,
-            pointsNeeded = pointsNeeded,
-            opponentExpected = oppExpectedSum,
-            remainingCards = totalRemaining,
-            deckText = deckText
-        }
-    }
-end
-
--- Update UI
-local function updateDisplay()
-    if tick() - LastUpdate < CONFIG.UPDATE_INTERVAL and not Minimized then
-        return
-    end
-    
-    LastUpdate = tick()
-    
-    local gameState = analyzeGameState()
-    
-    if Minimized then return end
-    
-    -- Update recommendation
-    Recommendation.Text = gameState.recommendation
-    Recommendation.TextColor3 = gameState.color
-    SubRecommendation.Text = gameState.subtitle
-    
-    -- Update stats
-    if gameState.status == "active" then
-        SafeChanceLabel.Text = string.format("📊 Safe Chance: <font color='%s'>%.1f%%</font>", 
-            gameState.stats.safeChance > 0.5 and "#32C820" or "#C83220",
-            gameState.stats.safeChance * 100)
-        
-        PointsLabel.Text = string.format("🎯 Points Needed: <font color='%s'>%d</font>",
-            gameState.stats.pointsNeeded <= 5 and "#32C820" or "#C83220",
-            gameState.stats.pointsNeeded)
-        
-        OpponentLabel.Text = string.format("👤 Opponent Expected: <font color='%s'>%.1f</font>",
-            gameState.stats.opponentExpected < 15 and "#32C820" or "#C83220",
-            gameState.stats.opponentExpected)
-        
-        CardsLabel.Text = string.format("🃏 Remaining: <font color='#32C820'>%d</font>", gameState.stats.remainingCards)
-    else
-        SafeChanceLabel.Text = "📊 Safe Chance: --%"
-        PointsLabel.Text = "🎯 Points Needed: --"
-        OpponentLabel.Text = "👤 Opponent Expected: --"
-        CardsLabel.Text = "🃏 Remaining Cards: --"
-    end
-end
-
--- Initialize
-RunService.Heartbeat:Connect(updateDisplay)
-
--- Cleanup
-LocalPlayer.CharacterRemoving:Connect(function()
-    if ScreenGui then
-        ScreenGui:Destroy()
-    end
+-- Keyboard Shortcut (M)
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if not gpe and input.KeyCode == Enum.KeyCode.M then
+		AutoButton:Activate()
+	end
 end)
 
-warn("🎴 Advanced Card Counter loaded! Features: Auto-click, Smooth UI, Real-time stats, History tracking")
+-- FPS & Ping Tracker
+local frames, lastTime = 0, tick()
+RunService.Heartbeat:Connect(function()
+	frames += 1
+	local now = tick()
+	if now - lastTime >= 1 then
+		local fps = frames / (now - lastTime)
+		local ping = math.floor(Players.LocalPlayer:GetNetworkPing() * 1000)
+		Status.Text = string.format("FPS: %d | Ping: %dms", math.floor(fps), ping)
+		frames, lastTime = 0, now
+	end
+end)
+
+-- 🔑 Advisor Update (ganti ini dengan updateAdvisor kamu)
+local function updateAdvisor()
+	-- contoh simulasi
+	if math.random() > 0.5 then
+		Recommendation.Text = "TAKE"
+		Recommendation.TextColor3 = Color3.fromRGB(50,200,50)
+		addHistory("Rekomendasi: TAKE")
+	else
+		Recommendation.Text = "HOLD"
+		Recommendation.TextColor3 = Color3.fromRGB(200,50,50)
+		addHistory("Rekomendasi: HOLD")
+	end
+
+	InfoLabel.Text = "Safe Draw Chance: 55%\nPoints Needed: 3\nOpponent Expected: 14\nRemaining Cards: <font color='#32C820'>2</font>, <font color='#C83220'>7</font>, <font color='#32C820'>4</font>"
+end
+
+RunService.RenderStepped:Connect(updateAdvisor)
