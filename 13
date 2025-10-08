@@ -1,140 +1,186 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-
 local LocalPlayer = Players.LocalPlayer
-
-local WINDOW_SIZE = UDim2.new(0, 280, 0, 180)
-local PRIMARY_COLOR = Color3.fromRGB(15, 15, 15) -- Dark Background
-local SECONDARY_COLOR = Color3.fromRGB(25, 25, 25) -- Element Background
-local ACCENT_COLOR = Color3.fromRGB(0, 120, 212) -- Blue Accent
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
-ScreenGui.Name = "AdvancedCardAdvisor"
+ScreenGui.Name = "CardAdvisor"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local Frame = Instance.new("Frame")
-Frame.Size = WINDOW_SIZE
-Frame.Position = UDim2.new(0.5, -140, 0.2, 0)
-Frame.BackgroundColor3 = PRIMARY_COLOR
+Frame.Size = UDim2.new(0, 300, 0, 240)
+Frame.Position = UDim2.new(0.5, -150, 0.2, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
 Frame.BorderSizePixel = 0
 Frame.Active = true
 Frame.Draggable = true
 Frame.Parent = ScreenGui
 
 local UICorner = Instance.new("UICorner", Frame)
-UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.CornerRadius = UDim.new(0, 12)
 
-local UIStroke = Instance.new("UIStroke", Frame)
-UIStroke.Color = ACCENT_COLOR
-UIStroke.Thickness = 1
-UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+UIListLayout.FillDirection = Enum.FillDirection.Vertical
+UIListLayout.Parent = Frame
 
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 35)
-Header.Position = UDim2.new(0, 0, 0, 0)
-Header.BackgroundColor3 = SECONDARY_COLOR
-Header.BorderSizePixel = 0
-Header.Parent = Frame
+local DragHandle = Instance.new("Frame")
+DragHandle.Name = "DragHandle"
+DragHandle.Parent = Frame
+DragHandle.Size = UDim2.new(1, 0, 0, 35)
+DragHandle.Position = UDim2.new(0, 0, 0, 0)
+DragHandle.BackgroundTransparency = 1
+DragHandle.ZIndex = 2
+DragHandle.LayoutOrder = 1
 
-local HeaderUICorner = Instance.new("UICorner", Header)
-HeaderUICorner.CornerRadius = UDim.new(0, 10)
-
-local HeaderTitle = Instance.new("TextLabel")
-HeaderTitle.Size = UDim2.new(1, -40, 1, 0)
-HeaderTitle.Position = UDim2.new(0, 10, 0, 0)
-HeaderTitle.BackgroundTransparency = 1
-HeaderTitle.Text = "Blackjack Advisor System"
-HeaderTitle.Font = Enum.Font.SourceSansBold
-HeaderTitle.TextSize = 18
-HeaderTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
-HeaderTitle.Parent = Header
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -60, 0, 30)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Card Advisor"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 22
+Title.TextColor3 = Color3.fromRGB(230, 230, 230)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = DragHandle
 
 local CloseButton = Instance.new("TextButton")
 CloseButton.Size = UDim2.new(0, 25, 0, 25)
-CloseButton.Position = UDim2.new(1, -30, 0.5, -12.5)
+CloseButton.Position = UDim2.new(1, -28, 0, 5)
 CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseButton.Text = "X"
+CloseButton.Text = "✕"
 CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseButton.Font = Enum.Font.SourceSansBold
-CloseButton.TextSize = 16
-CloseButton.Parent = Header
-
+CloseButton.TextSize = 20
+CloseButton.Parent = DragHandle
 local CloseUICorner = Instance.new("UICorner", CloseButton)
 CloseUICorner.CornerRadius = UDim.new(0, 6)
-
 CloseButton.MouseButton1Click:Connect(function()
 	ScreenGui:Destroy()
 	if script then script:Destroy() end
 end)
 
-local RecommendationPanel = Instance.new("Frame")
-RecommendationPanel.Size = UDim2.new(1, -20, 0, 45)
-RecommendationPanel.Position = UDim2.new(0, 10, 0, 45)
-RecommendationPanel.BackgroundColor3 = SECONDARY_COLOR
-RecommendationPanel.BorderSizePixel = 0
-RecommendationPanel.Parent = Frame
-
-local RecUICorner = Instance.new("UICorner", RecommendationPanel)
-RecUICorner.CornerRadius = UDim.new(0, 6)
-
-local Recommendation = Instance.new("TextLabel")
-Recommendation.Size = UDim2.new(1, 0, 1, 0)
-Recommendation.Position = UDim2.new(0, 0, 0, 0)
-Recommendation.BackgroundTransparency = 1
-Recommendation.Text = "Analyzing..."
-Recommendation.Font = Enum.Font.SourceSansBold
-Recommendation.TextSize = 28
-Recommendation.TextColor3 = Color3.fromRGB(255, 255, 0)
-Recommendation.Parent = RecommendationPanel
+local dragging, dragStart, startPos
+DragHandle.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = Frame.Position
+		local connection
+		connection = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+				connection:Disconnect()
+			end
+		end)
+	end
+end)
+DragHandle.InputChanged:Connect(function(input)
+	if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+		local delta = input.Position - dragStart
+		Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
 
 local Separator = Instance.new("Frame")
+Separator.Name = "Separator"
 Separator.Size = UDim2.new(1, -20, 0, 1)
-Separator.Position = UDim2.new(0, 10, 0, 95)
-Separator.BackgroundColor3 = ACCENT_COLOR
+Separator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 Separator.BorderSizePixel = 0
 Separator.Parent = Frame
+Separator.LayoutOrder = 2
 
-local InfoLabel = Instance.new("TextLabel")
-InfoLabel.Size = UDim2.new(1, -20, 1, -100)
-InfoLabel.Position = UDim2.new(0, 10, 0, 100)
-InfoLabel.BackgroundTransparency = 1
-InfoLabel.Font = Enum.Font.SourceSans
-InfoLabel.TextSize = 15
-InfoLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
-InfoLabel.TextWrapped = true
-InfoLabel.RichText = true
-InfoLabel.Parent = Frame
+local Recommendation = Instance.new("TextLabel")
+Recommendation.Name = "Recommendation"
+Recommendation.Size = UDim2.new(1, -20, 0, 40)
+Recommendation.BackgroundTransparency = 1
+Recommendation.Font = Enum.Font.GothamBold
+Recommendation.TextSize = 34
+Recommendation.TextColor3 = Color3.fromRGB(255, 255, 255)
+Recommendation.Parent = Frame
+Recommendation.LayoutOrder = 3
+
+local InfoContainer = Instance.new("Frame")
+InfoContainer.Name = "InfoContainer"
+InfoContainer.Size = UDim2.new(1, -20, 0, 140)
+InfoContainer.BackgroundTransparency = 1
+InfoContainer.Parent = Frame
+InfoContainer.LayoutOrder = 4
+
+local InfoListLayout = Instance.new("UIListLayout")
+InfoListLayout.Padding = UDim.new(0, 3)
+InfoListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+InfoListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+InfoListLayout.FillDirection = Enum.FillDirection.Vertical
+InfoListLayout.Parent = InfoContainer
+
+local InfoFields = {
+	SafeChance = Instance.new("TextLabel"),
+	PointsNeeded = Instance.new("TextLabel"),
+	OpponentExpected = Instance.new("TextLabel"),
+	RemainingCardsTitle = Instance.new("TextLabel"),
+	RemainingCards = Instance.new("TextLabel"),
+	Status = Instance.new("TextLabel"),
+}
+
+for name, label in pairs(InfoFields) do
+	label.Name = name
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.SourceSans
+	label.TextSize = 16
+	label.TextColor3 = Color3.fromRGB(180, 180, 180)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextWrapped = true
+	label.RichText = true
+	label.Parent = InfoContainer
+	if name == "RemainingCards" then
+		label.Size = UDim2.new(1, 0, 0, 40)
+	elseif name == "RemainingCardsTitle" then
+		label.Font = Enum.Font.SourceSansBold
+		label.TextColor3 = Color3.fromRGB(230, 230, 230)
+		label.Text = "Remaining Cards in Deck:"
+		label.Size = UDim2.new(1, 0, 0, 18)
+	end
+end
 
 local function cardValue(v)
 	if v == "L" then return 99 end
 	return tonumber(v)
 end
 
-local function getCardData()
-	local cardsContainer = workspace.Room and workspace.Room:FindFirstChild("Cards")
-	local opponentRoot = workspace.Room and workspace.Room.Opponent and workspace.Room.Opponent:FindFirstChild("HumanoidRootPart")
-	local myCamera = workspace.Room and workspace.Room:FindFirstChild("Camera")
-	local goalValue = nil
+local function updateAdvisor()
+	local room = workspace:FindFirstChild("Room")
+	local cardsContainer = room and room:FindFirstChild("Cards")
+	local opponentRoot = room and room.Opponent and room.Opponent:FindFirstChild("HumanoidRootPart")
+	local myCamera = room and room:FindFirstChild("Camera")
 
-	local sumLabel = workspace.Room
-		and workspace.Room.Main
-		and workspace.Room.Main:FindFirstChild("YourCardsSum")
-		and workspace.Room.Main.YourCardsSum:FindFirstChild("SurfaceGui")
-		and workspace.Room.Main.YourCardsSum.SurfaceGui:FindFirstChild("TextLabel")
-
-	if sumLabel and sumLabel:IsA("TextLabel") then
-		local textMatch = (sumLabel.Text or ""):match("%d+/(%d+)")
-		if textMatch then goalValue = tonumber(textMatch) end
+	local goalValue
+	do
+		local sumLabel = room
+			and room.Main
+			and room.Main:FindFirstChild("YourCardsSum")
+			and room.Main.YourCardsSum:FindFirstChild("SurfaceGui")
+			and room.Main.YourCardsSum.SurfaceGui:FindFirstChild("TextLabel")
+		if sumLabel and sumLabel:IsA("TextLabel") then
+			goalValue = tonumber((sumLabel.Text or ""):match("%d+/(%d+)"))
+		end
 	end
 
 	if not (cardsContainer and opponentRoot and myCamera and goalValue) then
-		return nil
+		Recommendation.Text = "WAITING..."
+		Recommendation.TextColor3 = Color3.fromRGB(255, 191, 0)
+		InfoFields.Status.Text = "<font color='#FFBF00'>Waiting for game data...</font>"
+		InfoFields.SafeChance.Text = "Safe Draw Chance: N/A"
+		InfoFields.PointsNeeded.Text = "Points Needed: N/A"
+		InfoFields.OpponentExpected.Text = "Opponent Expected: N/A"
+		InfoFields.RemainingCards.Text = "N/A"
+		return
 	end
+
+	InfoFields.Status.Text = ""
 
 	local myCards, opponentCards = {}, {}
 	for _, obj in ipairs(cardsContainer:GetChildren()) do
@@ -152,68 +198,45 @@ local function getCardData()
 		end
 	end
 
-	return {
-		MyCards = myCards,
-		OpponentCards = opponentCards,
-		GoalValue = goalValue
-	}
-end
-
-local function updateAdvisor()
-	local data = getCardData()
-
-	if not data then
-		Recommendation.Text = "WAITING..."
-		Recommendation.TextColor3 = Color3.fromRGB(255, 200, 0)
-		InfoLabel.Text = "System is synchronizing with game data..."
-		return
-	end
-
 	local mySum = 0
-	for _, v in ipairs(data.MyCards) do
+	for _, v in ipairs(myCards) do
 		local n = cardValue(v)
 		if n and n <= 11 then mySum = mySum + n end
 	end
 
 	local oppKnownSum, oppHiddenCount = 0, 0
-	for _, v in ipairs(data.OpponentCards) do
+	for _, v in ipairs(opponentCards) do
 		local n = cardValue(v)
 		if n and n <= 11 then
 			oppKnownSum = oppKnownSum + n
-		else
+		elseif n == nil then
 			oppHiddenCount = oppHiddenCount + 1
 		end
 	end
 
-	local fullDeck = {1,2,3,4,5,6,7,8,9,10,11}
+	local deck = {1,2,3,4,5,6,7,8,9,10,11,1,2,3,4,5,6,7,8,9,10,11,1,2,3,4,5,6,7,8,9,10,11,1,2,3,4,5,6,7,8,9,10,11} -- Simulasi 4 deck
 	local visibleCards = {}
-	for _, v in ipairs(data.MyCards) do
+	for _, v in ipairs(myCards) do
 		local n = tonumber(v)
 		if n and n <= 11 then table.insert(visibleCards, n) end
 	end
-	for _, v in ipairs(data.OpponentCards) do
+	for _, v in ipairs(opponentCards) do
 		local n = tonumber(v)
 		if n and n <= 11 then table.insert(visibleCards, n) end
 	end
 	
-	local remainingDeck = {}
-	for _, deckCard in ipairs(fullDeck) do
-		local found = false
-		for i, visibleCard in ipairs(visibleCards) do
-			if deckCard == visibleCard then
-				table.remove(visibleCards, i)
-				found = true
+	for _, cardValue in ipairs(visibleCards) do
+		for i, deckCard in ipairs(deck) do
+			if deckCard == cardValue then
+				table.remove(deck, i)
 				break
 			end
-		end
-		if not found then
-			table.insert(remainingDeck, deckCard)
 		end
 	end
 
 	local safeDraws, bustDraws = 0, 0
-	for _, value in ipairs(remainingDeck) do
-		if mySum + value <= data.GoalValue then
+	for _, value in ipairs(deck) do
+		if mySum + value <= goalValue then
 			safeDraws += 1
 		else
 			bustDraws += 1
@@ -223,71 +246,60 @@ local function updateAdvisor()
 	local safeChance = (totalRemaining > 0) and (safeDraws / totalRemaining) or 0
 
 	local sumOfDeck = 0
-	for _, v in ipairs(remainingDeck) do sumOfDeck += v end
+	for _, v in ipairs(deck) do sumOfDeck += v end
 	local avgDeckValue = (totalRemaining > 0) and (sumOfDeck / totalRemaining) or 0
 	local oppExpectedSum = oppKnownSum + (oppHiddenCount * avgDeckValue)
 
-	local pointsNeeded = data.GoalValue - mySum
-	local opponentBust = oppKnownSum > data.GoalValue
+	local pointsNeeded = goalValue - mySum
+	local opponentBust = oppKnownSum >= goalValue
 
-	local recommendedAction = "HOLD"
-	local recColor = Color3.fromRGB(200, 50, 50) -- RED
+	local oppWinProb = (oppExpectedSum - mySum) * 0.05
+	local baseTakeChance = 0.50 
+	local adjustedTakeChance = baseTakeChance + oppWinProb
+	
+	local recommendationText, recommendationColor
 
-	if opponentBust then
-		recommendedAction = "HOLD"
-		recColor = Color3.fromRGB(255, 50, 50)
+	if mySum > goalValue then
+		recommendationText = "BUST!"
+		recommendationColor = Color3.fromRGB(200, 50, 50)
+	elseif opponentBust and oppHiddenCount == 0 then
+		recommendationText = "WIN (OPP BUST)"
+		recommendationColor = Color3.fromRGB(50, 200, 50)
+	elseif safeChance >= adjustedTakeChance and mySum < goalValue then
+		recommendationText = "TAKE"
+		recommendationColor = Color3.fromRGB(50, 200, 50)
+	elseif mySum == goalValue then
+		recommendationText = "HOLD (PERFECT)"
+		recommendationColor = Color3.fromRGB(50, 150, 250)
 	else
-		local probabilityHoldWin = 0.5 -- Starting baseline
-		local probabilityTakeWin = safeChance
-		
-		-- Adjust P(Hold Win) based on opponent's expected total
-		-- If opponent is far behind (e.g., OppExpectedSum < MySum), P(Hold Win) increases
-		local oppAdvantage = oppExpectedSum - mySum
-		probabilityHoldWin = 0.5 + (oppAdvantage * 0.05)
-		probabilityHoldWin = math.min(0.9, math.max(0.1, probabilityHoldWin)) -- Clamp
-
-		if probabilityTakeWin >= probabilityHoldWin then
-			recommendedAction = "TAKE"
-			recColor = Color3.fromRGB(50, 200, 50) -- GREEN
-		else
-			recommendedAction = "HOLD"
-			recColor = Color3.fromRGB(255, 100, 0) -- ORANGE
-		end
+		recommendationText = "HOLD"
+		recommendationColor = Color3.fromRGB(200, 50, 50)
 	end
 
-	Recommendation.Text = recommendedAction
-	Recommendation.TextColor3 = recColor
+	Recommendation.Text = recommendationText
+	Recommendation.TextColor3 = recommendationColor
 
 	local deckText = ""
-	for i, card in ipairs(remainingDeck) do
-		local color = (mySum + card <= data.GoalValue) and "#32C820" or "#C83220" -- Green or Red
-		deckText = deckText .. string.format("<font color='%s'>%d</font>", color, card)
-		if i < #remainingDeck then deckText = deckText .. ", " end
+	local cardCounts = {}
+	for _, card in ipairs(deck) do
+		cardCounts[card] = (cardCounts[card] or 0) + 1
 	end
+	
+	local sortedCards = {}
+	for card in pairs(cardCounts) do table.insert(sortedCards, card) end
+	table.sort(sortedCards)
 
-	InfoLabel.Text = string.format(
-		"<b><font color='#FFFFFF'>--- Player Stats ---</font></b>\n" ..
-		"Target: %d\n" ..
-		"Current Sum: %d\n" ..
-		"Points Needed: %d\n\n" ..
-		"<b><font color='#FFFFFF'>--- Opponent Analysis ---</font></b>\n" ..
-		"Known Sum: %d\n" ..
-		"Hidden Cards: %d\n" ..
-		"Expected Sum: %.1f\n\n" ..
-		"<b><font color='#FFFFFF'>--- Deck Probability ---</font></b>\n" ..
-		"Safe Draw Chance: <font color='%s'>%.1f%%</font>\n" ..
-		"Remaining Cards (%d): %s",
-		data.GoalValue,
-		mySum,
-		pointsNeeded,
-		oppKnownSum,
-		oppHiddenCount,
-		oppExpectedSum,
-		(safeChance >= 0.5) and "#32C820" or "#C83220",
-		safeChance * 100,
-		totalRemaining,
-		deckText
-	)
+	for i, card in ipairs(sortedCards) do
+		local count = cardCounts[card]
+		local color = (mySum + card <= goalValue) and "<font color='#32C820'>" or "<font color='#C83220'>"
+		deckText = deckText .. color .. card .. "x" .. count .. "</font>"
+		if i < #sortedCards then deckText = deckText .. ", " end
+	end
+	
+	InfoFields.SafeChance.Text = string.format("Safe Draw Chance: <font color='%s'>%.1f%%</font>", (safeChance >= 0.5 and "#32C820" or "#C83220"), safeChance*100)
+	InfoFields.PointsNeeded.Text = string.format("Points Needed: <font color='#A0A0FF'>%d</font>", pointsNeeded)
+	InfoFields.OpponentExpected.Text = string.format("Opponent Expected Sum: <font color='#FFA0A0'>%.1f</font>", oppExpectedSum)
+	InfoFields.RemainingCards.Text = deckText
 end
 
 RunService.RenderStepped:Connect(updateAdvisor)
