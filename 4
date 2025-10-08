@@ -1,440 +1,613 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer") and Players.LocalPlayer
-if not LocalPlayer then
-	repeat
-		task.wait()
-		LocalPlayer = Players.LocalPlayer
-	until LocalPlayer
+local LocalPlayer = Players.LocalPlayer
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CardCounter"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0, 320, 0, 180)
+Main.Position = UDim2.new(0.5, -160, 0.18, 0)
+Main.AnchorPoint = Vector2.new(0.5, 0)
+Main.BackgroundTransparency = 0
+Main.BackgroundColor3 = Color3.fromRGB(22, 24, 26)
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+local MainCorner = Instance.new("UICorner", Main)
+MainCorner.CornerRadius = UDim.new(0, 10)
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Thickness = 1
+MainStroke.Color = Color3.fromRGB(40, 40, 40)
+MainStroke.Transparency = 0.15
+
+local Header = Instance.new("Frame", Main)
+Header.Name = "Header"
+Header.Size = UDim2.new(1, 0, 0, 36)
+Header.Position = UDim2.new(0, 0, 0, 0)
+Header.BackgroundTransparency = 1
+
+local Title = Instance.new("TextLabel", Header)
+Title.AnchorPoint = Vector2.new(0, 0.5)
+Title.Position = UDim2.new(0, 12, 0.5, 0)
+Title.Size = UDim2.new(0.6, 0, 0.9, 0)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+Title.TextColor3 = Color3.fromRGB(240, 240, 240)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Text = "Card Counter • Advisor"
+
+local LastUpdateLabel = Instance.new("TextLabel", Header)
+LastUpdateLabel.AnchorPoint = Vector2.new(1, 0.5)
+LastUpdateLabel.Position = UDim2.new(0.99, -28, 0.5, 0)
+LastUpdateLabel.Size = UDim2.new(0.42, 0, 0.9, 0)
+LastUpdateLabel.BackgroundTransparency = 1
+LastUpdateLabel.Font = Enum.Font.SourceSans
+LastUpdateLabel.TextSize = 12
+LastUpdateLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
+LastUpdateLabel.TextXAlignment = Enum.TextXAlignment.Right
+LastUpdateLabel.Text = "idle"
+
+local BtnContainer = Instance.new("Frame", Header)
+BtnContainer.AnchorPoint = Vector2.new(1, 0.5)
+BtnContainer.Position = UDim2.new(0.99, -8, 0.5, 0)
+BtnContainer.Size = UDim2.new(0, 84, 0.9, 0)
+BtnContainer.BackgroundTransparency = 1
+local BtnLayout = Instance.new("UIListLayout", BtnContainer)
+BtnLayout.FillDirection = Enum.FillDirection.Horizontal
+BtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+BtnLayout.Padding = UDim.new(0, 6)
+
+local function makeButton(text, sizeX)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, sizeX or 28, 1, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
+	btn.BorderSizePixel = 0
+	btn.AutoButtonColor = true
+	btn.Font = Enum.Font.SourceSansBold
+	btn.TextSize = 14
+	btn.TextColor3 = Color3.fromRGB(230, 230, 230)
+	btn.Text = text
+	local c = Instance.new("UICorner", btn)
+	c.CornerRadius = UDim.new(0,6)
+	local s = Instance.new("UIStroke", btn)
+	s.Transparency = 0.6
+	s.Thickness = 1
+	return btn
 end
 
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local MinButton = makeButton("—", 28)
+MinButton.Parent = BtnContainer
+local SettingsButton = makeButton("⚙", 28)
+SettingsButton.Parent = BtnContainer
+local CloseButton = makeButton("✕", 28)
+CloseButton.Parent = BtnContainer
 
-local function Create(class, props)
-	local obj = Instance.new(class)
-	if props then
-		for k, v in pairs(props) do
-			obj[k] = v
-		end
-	end
-	return obj
+local Content = Instance.new("Frame", Main)
+Content.Name = "Content"
+Content.Size = UDim2.new(1, -16, 1, -56)
+Content.Position = UDim2.new(0, 8, 0, 40)
+Content.BackgroundTransparency = 1
+
+local Left = Instance.new("Frame", Content)
+Left.Size = UDim2.new(0.45, -6, 1, 0)
+Left.Position = UDim2.new(0, 0, 0, 0)
+Left.BackgroundTransparency = 1
+
+local Right = Instance.new("Frame", Content)
+Right.Size = UDim2.new(0.55, 0, 1, 0)
+Right.Position = UDim2.new(0.45, 8, 0, 0)
+Right.BackgroundTransparency = 1
+
+local function makeLabel(parent, title, y)
+	local t = Instance.new("TextLabel", parent)
+	t.Size = UDim2.new(1, 0, 0, 22)
+	t.Position = UDim2.new(0, 0, 0, y)
+	t.BackgroundTransparency = 1
+	t.Font = Enum.Font.SourceSans
+	t.TextSize = 13
+	t.TextColor3 = Color3.fromRGB(170,170,170)
+	t.TextXAlignment = Enum.TextXAlignment.Left
+	t.Text = title
+	local v = Instance.new("TextLabel", parent)
+	v.Size = UDim2.new(1, 0, 0, 26)
+	v.Position = UDim2.new(0, 0, 0, y + 22)
+	v.BackgroundTransparency = 1
+	v.Font = Enum.Font.SourceSansBold
+	v.TextSize = 16
+	v.TextColor3 = Color3.fromRGB(250,250,250)
+	v.TextXAlignment = Enum.TextXAlignment.Left
+	v.Text = "-"
+	return t, v
 end
 
-local screenGui = Create("ScreenGui", {Name = "CardAdvisorUI", ResetOnSpawn = false, Parent = PlayerGui, ZIndexBehavior = Enum.ZIndexBehavior.Sibling})
+local lblMySumTitle, lblMySum = makeLabel(Left, "My Sum", 0)
+local lblPointsNeededTitle, lblPointsNeeded = makeLabel(Left, "Points Needed", 54)
+local lblSafeChanceTitle, lblSafeChance = makeLabel(Left, "Safe Draw Chance", 108)
 
-local mainFrame = Create("Frame", {
-	Size = UDim2.new(0, 360, 0, 200),
-	Position = UDim2.new(0.5, -180, 0.18, 0),
-	AnchorPoint = Vector2.new(0.5, 0),
-	BackgroundColor3 = Color3.fromRGB(24, 26, 28),
-	BorderSizePixel = 0,
-	Parent = screenGui,
-	Active = true
-})
+local statOpponentTitle = Instance.new("TextLabel", Right)
+statOpponentTitle.Size = UDim2.new(1, 0, 0, 22)
+statOpponentTitle.Position = UDim2.new(0, 0, 0, 0)
+statOpponentTitle.BackgroundTransparency = 1
+statOpponentTitle.Font = Enum.Font.SourceSans
+statOpponentTitle.TextSize = 13
+statOpponentTitle.TextColor3 = Color3.fromRGB(170,170,170)
+statOpponentTitle.TextXAlignment = Enum.TextXAlignment.Left
+statOpponentTitle.Text = "Opponent (known / hidden)"
+local statOpponent = Instance.new("TextLabel", Right)
+statOpponent.Size = UDim2.new(1, 0, 0, 26)
+statOpponent.Position = UDim2.new(0, 0, 0, 22)
+statOpponent.BackgroundTransparency = 1
+statOpponent.Font = Enum.Font.SourceSansBold
+statOpponent.TextSize = 16
+statOpponent.TextColor3 = Color3.fromRGB(250,250,250)
+statOpponent.TextXAlignment = Enum.TextXAlignment.Left
+statOpponent.Text = "-"
 
-local corner = Create("UICorner", {CornerRadius = UDim.new(0, 12), Parent = mainFrame})
-local stroke = Create("UIStroke", {Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Color = Color3.fromRGB(40,40,40), Parent = mainFrame})
-local gradient = Create("UIGradient", {Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.fromRGB(26,28,31)), ColorSequenceKeypoint.new(1, Color3.fromRGB(34,36,38))}, Rotation = 90, Parent = mainFrame})
+local statDeckTitle = Instance.new("TextLabel", Right)
+statDeckTitle.Size = UDim2.new(1, 0, 0, 22)
+statDeckTitle.Position = UDim2.new(0, 0, 0, 60)
+statDeckTitle.BackgroundTransparency = 1
+statDeckTitle.Font = Enum.Font.SourceSans
+statDeckTitle.TextSize = 13
+statDeckTitle.TextColor3 = Color3.fromRGB(170,170,170)
+statDeckTitle.TextXAlignment = Enum.TextXAlignment.Left
+statDeckTitle.Text = "Remaining Deck"
+local statDeck = Instance.new("TextLabel", Right)
+statDeck.Size = UDim2.new(1, 0, 1, -86)
+statDeck.Position = UDim2.new(0, 0, 0, 82)
+statDeck.BackgroundTransparency = 1
+statDeck.RichText = true
+statDeck.Font = Enum.Font.SourceSansBold
+statDeck.TextSize = 14
+statDeck.TextColor3 = Color3.fromRGB(230,230,230)
+statDeck.TextXAlignment = Enum.TextXAlignment.Left
+statDeck.TextYAlignment = Enum.TextYAlignment.Top
+statDeck.TextWrapped = true
+statDeck.Text = "-"
 
-local topBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 40), Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1, Parent = mainFrame})
-Create("UICorner", {CornerRadius = UDim.new(0, 12), Parent = topBar})
+local Footer = Instance.new("Frame", Main)
+Footer.Size = UDim2.new(1, 0, 0, 28)
+Footer.Position = UDim2.new(0, 0, 1, -28)
+Footer.BackgroundTransparency = 1
 
-local title = Create("TextLabel", {
-	Parent = topBar,
-	Size = UDim2.new(0.6, -12, 1, 0),
-	Position = UDim2.new(0, 12, 0, 0),
-	BackgroundTransparency = 1,
-	Font = Enum.Font.GothamSemibold,
-	TextSize = 18,
-	Text = "Card Advisor",
-	TextColor3 = Color3.fromRGB(240,240,240),
-	TextXAlignment = Enum.TextXAlignment.Left
-})
+local FooterText = Instance.new("TextLabel", Footer)
+FooterText.Size = UDim2.new(1, -120, 1, 0)
+FooterText.Position = UDim2.new(0, 12, 0, 0)
+FooterText.BackgroundTransparency = 1
+FooterText.Font = Enum.Font.SourceSans
+FooterText.TextSize = 12
+FooterText.TextColor3 = Color3.fromRGB(150,150,150)
+FooterText.TextXAlignment = Enum.TextXAlignment.Left
+FooterText.Text = "Status: ready"
 
-local statusBadge = Create("TextLabel", {
-	Parent = topBar,
-	Size = UDim2.new(0.35, -16, 0.7, 0),
-	Position = UDim2.new(0.65, 8, 0.15, 0),
-	BackgroundTransparency = 0,
-	BackgroundColor3 = Color3.fromRGB(36, 160, 81),
-	Font = Enum.Font.GothamBold,
-	TextSize = 14,
-	Text = "READY",
-	TextColor3 = Color3.fromRGB(255,255,255),
-	TextScaled = false
-})
-Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = statusBadge})
-Create("UIStroke", {Thickness = 1, Color = Color3.fromRGB(25,120,60), Parent = statusBadge})
+local RefreshButton = makeButton("↻", 44)
+RefreshButton.Parent = Footer
+RefreshButton.Position = UDim2.new(1, -108, 0, 0)
+RefreshButton.AnchorPoint = Vector2.new(1,0)
+RefreshButton.Parent = Footer
 
-local closeBtn = Create("TextButton", {
-	Parent = topBar,
-	Size = UDim2.new(0, 28, 0, 28),
-	Position = UDim2.new(1, -38, 0.1, 0),
-	BackgroundColor3 = Color3.fromRGB(200, 58, 58),
-	Text = "✕",
-	Font = Enum.Font.GothamSemibold,
-	TextSize = 16,
-	TextColor3 = Color3.fromRGB(255,255,255)
-})
-Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = closeBtn})
-closeBtn.MouseButton1Click:Connect(function()
-	screenGui:Destroy()
-end)
+local CopyButton = makeButton("Copy", 52)
+CopyButton.Parent = Footer
+CopyButton.Position = UDim2.new(1, -56, 0, 0)
+CopyButton.AnchorPoint = Vector2.new(1,0)
 
-local lockBtn = Create("TextButton", {
-	Parent = topBar,
-	Size = UDim2.new(0, 28, 0, 28),
-	Position = UDim2.new(1, -74, 0.1, 0),
-	BackgroundColor3 = Color3.fromRGB(60,60,60),
-	Text = "🔒",
-	Font = Enum.Font.GothamBold,
-	TextSize = 14,
-	TextColor3 = Color3.fromRGB(220,220,220)
-})
-Create("UICorner", {CornerRadius = UDim.new(0,8), Parent = lockBtn})
+local SettingsPanel = Instance.new("Frame", Main)
+SettingsPanel.Name = "SettingsPanel"
+SettingsPanel.Size = UDim2.new(0.9, 0, 0, 120)
+SettingsPanel.Position = UDim2.new(0.05, 0, 1, 8)
+SettingsPanel.BackgroundColor3 = Color3.fromRGB(28,28,30)
+SettingsPanel.BorderSizePixel = 0
+SettingsPanel.Visible = false
+local SettingsCorner = Instance.new("UICorner", SettingsPanel)
+SettingsCorner.CornerRadius = UDim.new(0,8)
+local SettingsLayout = Instance.new("UIListLayout", SettingsPanel)
+SettingsLayout.Padding = UDim.new(0,8)
+SettingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+SettingsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+SettingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local compactBtn = Create("TextButton", {
-	Parent = topBar,
-	Size = UDim2.new(0, 28, 0, 28),
-	Position = UDim2.new(1, -110, 0.1, 0),
-	BackgroundColor3 = Color3.fromRGB(60,60,60),
-	Text = "−",
-	Font = Enum.Font.GothamBold,
-	TextSize = 18,
-	TextColor3 = Color3.fromRGB(220,220,220)
-})
-Create("UICorner", {CornerRadius = UDim.new(0,8), Parent = compactBtn})
+local OpacityFrame = Instance.new("Frame", SettingsPanel)
+OpacityFrame.Size = UDim2.new(1, -12, 0, 28)
+OpacityFrame.Position = UDim2.new(0, 8, 0, 8)
+OpacityFrame.BackgroundTransparency = 1
+local OpacityLabel = Instance.new("TextLabel", OpacityFrame)
+OpacityLabel.Size = UDim2.new(0.4, 0, 1, 0)
+OpacityLabel.Position = UDim2.new(0, 0, 0, 0)
+OpacityLabel.BackgroundTransparency = 1
+OpacityLabel.Font = Enum.Font.SourceSans
+OpacityLabel.TextSize = 13
+OpacityLabel.TextColor3 = Color3.fromRGB(180,180,180)
+OpacityLabel.Text = "Opacity"
+local OpacityValue = Instance.new("TextLabel", OpacityFrame)
+OpacityValue.Size = UDim2.new(0.2, 0, 1, 0)
+OpacityValue.Position = UDim2.new(0.8, 0, 0, 0)
+OpacityValue.BackgroundTransparency = 1
+OpacityValue.Font = Enum.Font.SourceSansBold
+OpacityValue.TextSize = 13
+OpacityValue.TextColor3 = Color3.fromRGB(220,220,220)
+OpacityValue.Text = "100%"
 
-local content = Create("Frame", {Parent = mainFrame, Size = UDim2.new(1, -20, 1, -60), Position = UDim2.new(0, 10, 0, 50), BackgroundTransparency = 1})
-local grid = Create("UIGridLayout", {Parent = content, CellSize = UDim2.new(0.5, -10, 0.5, -10), CellPadding = UDim2.new(0, 8, 0, 8), FillDirection = Enum.FillDirection.Vertical, HorizontalAlignment = Enum.HorizontalAlignment.Left})
+local SliderBar = Instance.new("Frame", OpacityFrame)
+SliderBar.Size = UDim2.new(0.55, 0, 0.36, 0)
+SliderBar.Position = UDim2.new(0.42, 0, 0.32, 0)
+SliderBar.BackgroundColor3 = Color3.fromRGB(40,40,42)
+SliderBar.BorderSizePixel = 0
+local SliderCorner = Instance.new("UICorner", SliderBar)
+SliderCorner.CornerRadius = UDim.new(0,6)
+local SliderHandle = Instance.new("Frame", SliderBar)
+SliderHandle.Size = UDim2.new(0, 14, 1, 0)
+SliderHandle.Position = UDim2.new(1, -14, 0, 0)
+SliderHandle.BackgroundColor3 = Color3.fromRGB(200,200,200)
+local HandleCorner = Instance.new("UICorner", SliderHandle)
+HandleCorner.CornerRadius = UDim.new(0,6)
 
-local function makeStat(titleText)
-	local card = Create("Frame", {Parent = content, BackgroundColor3 = Color3.fromRGB(20,20,20), BorderSizePixel = 0})
-	Create("UICorner", {CornerRadius = UDim.new(0,10), Parent = card})
-	Create("UIStroke", {Thickness = 1, Color = Color3.fromRGB(40,40,40), Parent = card})
-	local labelTitle = Create("TextLabel", {Parent = card, Size = UDim2.new(1, -12, 0, 20), Position = UDim2.new(0, 8, 0, 6), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = titleText, TextSize = 13, TextColor3 = Color3.fromRGB(190,190,190), TextXAlignment = Enum.TextXAlignment.Left})
-	local labelValue = Create("TextLabel", {Parent = card, Size = UDim2.new(1, -12, 0, 40), Position = UDim2.new(0, 8, 0, 28), BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = "-", TextSize = 24, TextColor3 = Color3.fromRGB(240,240,240), TextXAlignment = Enum.TextXAlignment.Left})
-	return card, labelTitle, labelValue
-end
+local pinned = false
+local dragging, dragStart, startPos
 
-local sumCard, sumTitle, sumValue = makeStat("Total Saya")
-local needCard, needTitle, needValue = makeStat("Poin Tersisa")
-local safeCard, safeTitle, safeValue = makeStat("Peluang Aman")
-local oppCard, oppTitle, oppValue = makeStat("Ekspektasi Lawan")
-
-local details = Create("TextLabel", {Parent = mainFrame, Size = UDim2.new(1, -24, 0, 42), Position = UDim2.new(0, 12, 1, -50), BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Color3.fromRGB(200,200,200), Text = "Kartu tersisa: -", TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, RichText = true})
-
-local theme = "dark"
-local locked = false
-local compact = false
-
-local dragging = false
-local dragStart, startPos
-
-topBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		if not locked then
-			dragging = true
-			dragStart = input.Position
-			startPos = mainFrame.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
-	end
-end)
-
-topBar.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-lockBtn.MouseButton1Click:Connect(function()
-	locked = not locked
-	lockBtn.Text = locked and "🔓" or "🔒"
-	local t = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	TweenService:Create(lockBtn, t, {Rotation = locked and 10 or 0}):Play()
-end)
-
-compactBtn.MouseButton1Click:Connect(function()
-	compact = not compact
-	if compact then
-		mainFrame.Size = UDim2.new(0, 260, 0, 110)
-		content.Visible = false
-		details.Visible = false
-		compactBtn.Text = "+"
-	else
-		mainFrame.Size = UDim2.new(0, 360, 0, 200)
-		content.Visible = true
-		details.Visible = true
-		compactBtn.Text = "−"
-	end
-end)
-
-local function setTheme(t)
-	theme = t
-	if theme == "light" then
-		mainFrame.BackgroundColor3 = Color3.fromRGB(245,245,245)
-		title.TextColor3 = Color3.fromRGB(28,28,28)
-		sumValue.TextColor3 = Color3.fromRGB(18,18,18)
-		details.TextColor3 = Color3.fromRGB(60,60,60)
-		statusBadge.BackgroundColor3 = Color3.fromRGB(30,130,76)
-	else
-		mainFrame.BackgroundColor3 = Color3.fromRGB(24,26,28)
-		title.TextColor3 = Color3.fromRGB(240,240,240)
-		sumValue.TextColor3 = Color3.fromRGB(240,240,240)
-		details.TextColor3 = Color3.fromRGB(200,200,200)
-		statusBadge.BackgroundColor3 = Color3.fromRGB(36,160,81)
-	end
-end
-
-local themeBtn = Create("TextButton", {
-	Parent = topBar,
-	Size = UDim2.new(0, 28, 0, 28),
-	Position = UDim2.new(1, -146, 0.1, 0),
-	BackgroundColor3 = Color3.fromRGB(60,60,60),
-	Text = "☼",
-	Font = Enum.Font.GothamBold,
-	TextSize = 14,
-	TextColor3 = Color3.fromRGB(220,220,220)
-})
-Create("UICorner", {CornerRadius = UDim.new(0,8), Parent = themeBtn})
-themeBtn.MouseButton1Click:Connect(function()
-	setTheme(theme == "dark" and "light" or "dark")
-end)
-
-local lastUpdate = 0
-local updateInterval = 0.12
-
-local function safeNumber(n)
-	if type(n) ~= "number" then return 0 end
-	if n ~= n then return 0 end
+local function clamp(n, a, b)
+	if n < a then return a end
+	if n > b then return b end
 	return n
 end
 
-local function parseCardValue(v)
-	if not v then return nil end
-	if type(v) == "string" then
-		local trimmed = v:match("^%s*(.-)%s*$")
-		if trimmed == "L" or trimmed == "J" or trimmed == "X" then
-			return 99
-		end
-		local num = tonumber(trimmed)
-		return num
+local settingsOpen = false
+
+local function setVisibilityCollapsed(collapsed)
+	if collapsed then
+		TweenService:Create(Main, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 180, 0, 38)}):Play()
+		Header.Visible = true
+		Content.Visible = false
+		Footer.Visible = false
+	else
+		TweenService:Create(Main, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 320, 0, 180)}):Play()
+		task.delay(0.18, function()
+			Content.Visible = true
+			Footer.Visible = true
+		end)
 	end
-	if typeof(v) == "number" then return v end
-	return nil
 end
 
-local function getGameObjects()
-	local room = workspace:FindFirstChild("Room")
-	if not room then return nil end
-	local cardsContainer = room:FindFirstChild("Cards")
-	local opponent = room:FindFirstChild("Opponent")
-	local main = room:FindFirstChild("Main")
-	local cameraObj = room:FindFirstChild("Camera") or workspace.CurrentCamera
-	return {
-		room = room,
-		cards = cardsContainer,
-		opponent = opponent,
-		main = main,
-		camera = cameraObj
-	}
+MinButton.MouseButton1Click:Connect(function()
+	local collapsed = Content.Visible
+	setVisibilityCollapsed(collapsed)
+end)
+
+SettingsButton.MouseButton1Click:Connect(function()
+	settingsOpen = not settingsOpen
+	SettingsPanel.Visible = settingsOpen
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+	ScreenGui:Destroy()
+end)
+
+local function updateOpacityFromPercent(p)
+	local alpha = clamp(p, 30, 100)
+	Main.BackgroundTransparency = 1 - (alpha/100)
+	OpacityValue.Text = tostring(math.floor(alpha)) .. "%"
 end
 
-local function computeAdvisor()
-	local objs = getGameObjects()
-	if not objs or not objs.room or not objs.cards or not objs.opponent or not objs.main or not objs.camera then
-		return nil
+local draggingSlider = false
+local sliderX = 0
+
+SliderBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		draggingSlider = true
+		UserInputService.MouseIconEnabled = true
+		local absPos = input.Position.X - SliderBar.AbsolutePosition.X
+		sliderX = clamp(absPos / SliderBar.AbsoluteSize.X, 0, 1)
+		SliderHandle.Position = UDim2.new(sliderX, -14, 0, 0)
+		updateOpacityFromPercent(sliderX * 100)
 	end
-
-	local myCamera = objs.camera
-	local opponentRoot = objs.opponent:FindFirstChild("HumanoidRootPart")
-	if not opponentRoot then return nil end
-
-	local sumLabel
-	local sumUi = objs.main:FindFirstChild("YourCardsSum")
-	if sumUi then
-		local surf = sumUi:FindFirstChildWhichIsA("SurfaceGui") or sumUi:FindFirstChild("SurfaceGui")
-		if surf then
-			sumLabel = surf:FindFirstChild("TextLabel")
-		else
-			sumLabel = sumUi:FindFirstChild("TextLabel")
-		end
+end)
+SliderBar.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		draggingSlider = false
+		UserInputService.MouseIconEnabled = false
 	end
-
-	local goalValue
-	if sumLabel and sumLabel:IsA("TextLabel") then
-		local found = (sumLabel.Text or ""):match("(%d+)%s*/%s*(%d+)")
-		if found then
-			local _,goal = (sumLabel.Text or ""):match("(%d+)%s*/%s*(%d+)")
-			goalValue = tonumber(goal)
-		else
-			local _,g = (sumLabel.Text or ""):match("%d+/%s*(%d+)")
-			goalValue = tonumber(g)
-		end
-	end
-
-	if not goalValue then
-		local fallback = objs.main:FindFirstChild("Goal") or objs.main:FindFirstChild("Target")
-		if fallback and fallback:IsA("IntValue") then
-			goalValue = fallback.Value
-		end
-	end
-
-	if not goalValue then return nil end
-
-	local myCards, oppCards = {}, {}
-	for _, obj in ipairs(objs.cards:GetChildren()) do
-		if obj.Name == "Card" and obj:IsA("BasePart") then
-			local scoreLabel = obj:FindFirstChild("Score") and obj.Score:FindFirstChildWhichIsA("TextLabel")
-			local face = scoreLabel and scoreLabel.Text or nil
-			local distToOpp = (obj.Position - opponentRoot.Position).Magnitude
-			local distToCam = (obj.Position - myCamera.Position).Magnitude
-			local owner = (distToOpp < distToCam) and "Opponent" or "Me"
-			if owner == "Me" then
-				table.insert(myCards, face)
-			else
-				table.insert(oppCards, face)
-			end
-		end
-	end
-
-	local function valueOrHidden(x)
-		local v = parseCardValue(x)
-		if v then return v end
-		return nil
-	end
-
-	local mySum = 0
-	for _, v in ipairs(myCards) do
-		local n = valueOrHidden(v)
-		if n then mySum = mySum + n end
-	end
-
-	local oppKnownSum, oppHiddenCount = 0, 0
-	for _, v in ipairs(oppCards) do
-		local n = valueOrHidden(v)
-		if n then
-			oppKnownSum = oppKnownSum + n
-		else
-			oppHiddenCount = oppHiddenCount + 1
-		end
-	end
-
-	local deck = {1,2,3,4,5,6,7,8,9,10,11}
-	local visible = {}
-	for _, v in ipairs(myCards) do
-		local n = tonumber(v)
-		if n then table.insert(visible, n) end
-	end
-	for _, v in ipairs(oppCards) do
-		local n = tonumber(v)
-		if n then table.insert(visible, n) end
-	end
-	for _, val in ipairs(visible) do
-		for i = #deck,1,-1 do
-			if deck[i] == val then
-				table.remove(deck, i)
-				break
-			end
-		end
-	end
-
-	local safeDraws, bustDraws = 0, 0
-	for _, value in ipairs(deck) do
-		if mySum + value <= goalValue then
-			safeDraws = safeDraws + 1
-		else
-			bustDraws = bustDraws + 1
-		end
-	end
-	local totalRemaining = safeDraws + bustDraws
-	local safeChance = (totalRemaining > 0) and (safeDraws / totalRemaining) or 0
-
-	local sumDeck = 0
-	for _, v in ipairs(deck) do sumDeck = sumDeck + v end
-	local avgDeckValue = (totalRemaining > 0) and (sumDeck / totalRemaining) or 0
-	local oppExpected = oppKnownSum + (oppHiddenCount * avgDeckValue)
-
-	local pointsNeeded = goalValue - mySum
-	local opponentBust = oppKnownSum > goalValue
-
-	return {
-		mySum = safeNumber(mySum),
-		pointsNeeded = pointsNeeded,
-		safeChance = safeChance,
-		oppExpected = oppExpected,
-		deck = deck,
-		oppBust = opponentBust,
-		totalRemaining = totalRemaining,
-		safeDraws = safeDraws,
-		bustDraws = bustDraws,
-		oppHiddenCount = oppHiddenCount,
-		goalValue = goalValue
-	}
-end
-
-local function formatPercent(n)
-	return string.format("%.1f%%", safeNumber(n * 100))
-end
-
-local function updateUI(data)
-	if not data then
-		statusBadge.Text = "WAITING"
-		statusBadge.BackgroundColor3 = Color3.fromRGB(200,150,40)
-		sumValue.Text = "-"
-		needValue.Text = "-"
-		safeValue.Text = "-"
-		oppValue.Text = "-"
-		details.Text = "Kartu tersisa: -"
-		return
-	end
-
-	statusBadge.Text = "ACTIVE"
-	statusBadge.BackgroundColor3 = Color3.fromRGB(36,160,81)
-
-	sumValue.Text = tostring(data.mySum)
-	needValue.Text = tostring(data.pointsNeeded >= 0 and data.pointsNeeded or 0)
-	safeValue.Text = formatPercent(data.safeChance)
-	oppValue.Text = string.format("%.1f", data.oppExpected)
-
-	local deckText = {}
-	for i, card in ipairs(data.deck) do
-		local ok = (data.mySum + card <= data.goalValue)
-		local part = ok and ("<font color=\"rgb(50,200,80)\">"..tostring(card).."</font>") or ("<font color=\"rgb(220,80,80)\">"..tostring(card).."</font>")
-		table.insert(deckText, part)
-	end
-	details.Text = "Kartu tersisa: " .. (#data.deck > 0 and table.concat(deckText, ", ") or "-")
-end
-
-local function safeRender()
-	local now = tick()
-	if now - lastUpdate < updateInterval then return end
-	lastUpdate = now
-	local ok, data = pcall(computeAdvisor)
-	if not ok or not data then
-		updateUI(nil)
-		return
-	end
-	updateUI(data)
-end
-
-RunService.RenderStepped:Connect(safeRender)
-
-local keybindVisible = Enum.KeyCode.K
-UserInputService.InputBegan:Connect(function(input, gpe)
-	if gpe then return end
-	if input.KeyCode == keybindVisible then
-		screenGui.Enabled = not screenGui.Enabled
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local absPos = input.Position.X - SliderBar.AbsolutePosition.X
+		sliderX = clamp(absPos / SliderBar.AbsoluteSize.X, 0, 1)
+		SliderHandle.Position = UDim2.new(sliderX, -14, 0, 0)
+		updateOpacityFromPercent(sliderX * 100)
 	end
 end)
 
-setTheme("dark")
+local function makeDraggable(frame, handle)
+	handle.InputBegan:Connect(function(input)
+		if pinned then return end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+			local conn
+			conn = input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+					conn:Disconnect()
+				end
+			end)
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
+
+makeDraggable(Main, Header)
+
+local pinnedBtn = makeButton("📌", 36)
+pinnedBtn.Parent = Header
+pinnedBtn.Position = UDim2.new(1, -120, 0.5, 0)
+pinnedBtn.AnchorPoint = Vector2.new(1, 0.5)
+pinnedBtn.LayoutOrder = 1
+
+pinnedBtn.MouseButton1Click:Connect(function()
+	pinned = not pinned
+	if pinned then
+		pinnedBtn.BackgroundColor3 = Color3.fromRGB(58,120,255)
+	else
+		pinnedBtn.BackgroundColor3 = Color3.fromRGB(36,38,40)
+	end
+end)
+
+local lastUpdate = 0
+local updateThrottle = 0.12
+
+local function safeFindTextLabel(path)
+	local ok, res = pcall(function()
+		local t = path
+		if t and t:IsA("TextLabel") then return t end
+		return nil
+	end)
+	if ok then return res end
+	return nil
+end
+
+local function parseCardText(scoreLabel)
+	if not scoreLabel then return nil end
+	local s = tostring(scoreLabel):gsub("%s","")
+	local n = tonumber(scoreLabel)
+	if n then return tostring(n) end
+	return tostring(scoreLabel)
+end
+
+local function updateAdvisor()
+	local now = tick()
+	if now - lastUpdate < updateThrottle then return end
+	lastUpdate = now
+	local ok, result = pcall(function()
+		local room = workspace:FindFirstChild("Room")
+		if not room then return nil end
+		local cardsContainer = room:FindFirstChild("Cards")
+		local opponent = room:FindFirstChild("Opponent")
+		local myCam = room:FindFirstChild("Camera") or workspace.CurrentCamera
+		local main = room:FindFirstChild("Main")
+		local goalValue
+		if main then
+			local sumObj = main:FindFirstChild("YourCardsSum")
+			if sumObj and sumObj:FindFirstChild("SurfaceGui") and sumObj.SurfaceGui:FindFirstChild("TextLabel") then
+				local txt = sumObj.SurfaceGui.TextLabel.Text or ""
+				local m = txt:match("(%d+)")
+				if m then
+					goalValue = tonumber(m)
+				end
+			end
+		end
+		if not (cardsContainer and opponent and myCam and goalValue) then return {status="waiting"} end
+
+		local myCards, oppCards = {}, {}
+		local opponentRoot = opponent:FindFirstChild("HumanoidRootPart")
+		local camPos = myCam.Position or (workspace.CurrentCamera and workspace.CurrentCamera.CFrame.Position) or Vector3.new(0,0,0)
+		for _, obj in ipairs(cardsContainer:GetChildren()) do
+			if obj.Name == "Card" and obj:IsA("BasePart") then
+				local scoreLabel = nil
+				if obj:FindFirstChild("Score") and obj.Score:FindFirstChild("TextLabel") then
+					scoreLabel = obj.Score.TextLabel.Text
+				end
+				local faceValue = scoreLabel or "[Hidden]"
+				local pos = obj.Position or Vector3.new(0,0,0)
+				local distToOpponent = (opponentRoot and (pos - opponentRoot.Position).Magnitude) or math.huge
+				local distToMe = (pos - camPos).Magnitude
+				local owner = (distToOpponent < distToMe) and "Opponent" or "Me"
+				if owner == "Me" then
+					table.insert(myCards, faceValue)
+				else
+					table.insert(oppCards, faceValue)
+				end
+			end
+		end
+
+		local function cardValue(v)
+			if not v then return nil end
+			if v == "L" then return 99 end
+			local n = tonumber(v)
+			return n
+		end
+
+		local mySum = 0
+		for _, v in ipairs(myCards) do
+			local n = cardValue(v)
+			if n then mySum = mySum + n end
+		end
+
+		local oppKnownSum, oppHiddenCount = 0, 0
+		for _, v in ipairs(oppCards) do
+			local n = cardValue(v)
+			if n then
+				oppKnownSum = oppKnownSum + n
+			else
+				oppHiddenCount = oppHiddenCount + 1
+			end
+		end
+
+		local deck = {1,2,3,4,5,6,7,8,9,10,11}
+		local visibleCards = {}
+		for _, v in ipairs(myCards) do
+			local n = tonumber(v)
+			if n then table.insert(visibleCards, n) end
+		end
+		for _, v in ipairs(oppCards) do
+			local n = tonumber(v)
+			if n then table.insert(visibleCards, n) end
+		end
+		for _, vc in ipairs(visibleCards) do
+			for i = #deck, 1, -1 do
+				if deck[i] == vc then
+					table.remove(deck, i)
+					break
+				end
+			end
+		end
+
+		local safeDraws, bustDraws = 0, 0
+		for _, value in ipairs(deck) do
+			if mySum + value <= goalValue then
+				safeDraws = safeDraws + 1
+			else
+				bustDraws = bustDraws + 1
+			end
+		end
+		local totalRemaining = safeDraws + bustDraws
+		local safeChance = (totalRemaining > 0) and (safeDraws / totalRemaining) or 0
+
+		local sumOfDeck = 0
+		for _, v in ipairs(deck) do sumOfDeck = sumOfDeck + v end
+		local avgDeckValue = (totalRemaining > 0) and (sumOfDeck / totalRemaining) or 0
+		local oppExpectedSum = oppKnownSum + (oppHiddenCount * avgDeckValue)
+
+		local pointsNeeded = goalValue - mySum
+		local opponentBust = oppKnownSum > goalValue
+
+		local requiredSafeChance = 0.50
+		local opponentAdvantage = math.max(0, oppExpectedSum - mySum)
+		requiredSafeChance = requiredSafeChance - (opponentAdvantage * 0.05)
+		requiredSafeChance = math.max(0.40, requiredSafeChance)
+
+		local recommendation = "HOLD"
+		local recColor = Color3.fromRGB(200,50,50)
+		if opponentBust then
+			recommendation = "HOLD"
+			recColor = Color3.fromRGB(200,50,50)
+		elseif (1 - safeChance) >= 0.5 and oppExpectedSum <= mySum then
+			recommendation = "HOLD"
+			recColor = Color3.fromRGB(200,50,50)
+		elseif safeChance >= requiredSafeChance then
+			recommendation = "TAKE"
+			recColor = Color3.fromRGB(50,200,50)
+		else
+			recommendation = "HOLD"
+			recColor = Color3.fromRGB(200,50,50)
+		end
+
+		local deckTextParts = {}
+		for i, card in ipairs(deck) do
+			if mySum + card <= goalValue then
+				table.insert(deckTextParts, ("<font color='rgb(50,200,80)'>%d</font>"):format(card))
+			else
+				table.insert(deckTextParts, ("<font color='rgb(200,80,80)'>%d</font>"):format(card))
+			end
+		end
+		local deckText = table.concat(deckTextParts, ", ")
+
+		return {
+			status = "ok",
+			mySum = mySum,
+			pointsNeeded = pointsNeeded,
+			safeChance = safeChance,
+			oppKnownSum = oppKnownSum,
+			oppHiddenCount = oppHiddenCount,
+			oppExpectedSum = oppExpectedSum,
+			deckText = deckText,
+			totalRemaining = totalRemaining,
+			recommendation = recommendation,
+			recColor = recColor,
+			goalValue = goalValue
+		}
+	end)
+	if not ok or not result then
+		FooterText.Text = "Status: no data"
+		LastUpdateLabel.Text = "idle"
+		lblMySum.Text = "-"
+		lblPointsNeeded.Text = "-"
+		lblSafeChance.Text = "-"
+		statOpponent.Text = "-"
+		statDeck.Text = "-"
+		return
+	end
+
+	if result.status == "waiting" then
+		FooterText.Text = "Status: waiting for room data"
+		LastUpdateLabel.Text = os.date("%H:%M:%S")
+		lblMySum.Text = "-"
+		lblPointsNeeded.Text = "-"
+		lblSafeChance.Text = "-"
+		statOpponent.Text = "-"
+		statDeck.Text = "-"
+		return
+	end
+
+	lblMySum.Text = tostring(result.mySum)
+	lblPointsNeeded.Text = tostring(result.pointsNeeded)
+	lblSafeChance.Text = string.format("%.1f%%", result.safeChance * 100)
+	statOpponent.Text = string.format("%d / %d", result.oppKnownSum, result.oppHiddenCount)
+	statDeck.Text = result.deckText or "-"
+	FooterText.Text = ("Status: updated • goal %d • remaining %d"):format(result.goalValue, result.totalRemaining)
+	LastUpdateLabel.Text = os.date("%H:%M:%S")
+	if result.recommendation == "TAKE" then
+		Title.TextColor3 = Color3.fromRGB(90, 220, 110)
+	else
+		Title.TextColor3 = Color3.fromRGB(250, 200, 100)
+	end
+	return
+end
+
+RunService.RenderStepped:Connect(function()
+	updateAdvisor()
+end)
+
+RefreshButton.MouseButton1Click:Connect(function()
+	updateAdvisor()
+end)
+
+local function trySetClipboard(text)
+	pcall(function()
+		if setclipboard then
+			setclipboard(text)
+		elseif syn and syn.set_clipboard then
+			syn.set_clipboard(text)
+		end
+	end)
+end
+
+CopyButton.MouseButton1Click:Connect(function()
+	local text = string.format(
+		"MySum: %s\nPointsNeeded: %s\nSafeChance: %s\nOpponentKnown: %s\nOpponentHidden: %s\nRemainingDeck: %s\nLastUpdate: %s",
+		lblMySum.Text, lblPointsNeeded.Text, lblSafeChance.Text, statOpponent.Text:match("^(%d+)") or "-", statOpponent.Text:match("/%s*(%d+)$") or "-", statDeck.Text:gsub("<.->",""), LastUpdateLabel.Text
+	)
+	trySetClipboard(text)
+	FooterText.Text = "Status: copied to clipboard (if supported)"
+	task.delay(1.4, function()
+		FooterText.Text = "Status: ready"
+	end)
+end)
+
+task.delay(0.1, function()
+	updateOpacityFromPercent(100)
+end)
+
+setVisibilityCollapsed(false)
+updateAdvisor()
