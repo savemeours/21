@@ -5,9 +5,9 @@ local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- GUI Root
+-- GUI ROOT
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "CardCounter"
+ScreenGui.Name = "CardAdvisorUI"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
@@ -15,26 +15,24 @@ ScreenGui.Parent = game.CoreGui
 -- MAIN CONTAINER
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 420, 0, 240) -- lebih besar
-Main.Position = UDim2.new(0.5, -210, 0.18, 0)
+Main.Size = UDim2.new(0, 420, 0, 240)
+Main.Position = UDim2.new(0.5, -210, 0.15, 0)
 Main.AnchorPoint = Vector2.new(0.5, 0)
-Main.BackgroundColor3 = Color3.fromRGB(22, 24, 26)
+Main.BackgroundColor3 = Color3.fromRGB(26, 28, 34)
 Main.BorderSizePixel = 0
 Main.Parent = ScreenGui
 
-local MainCorner = Instance.new("UICorner", Main)
-MainCorner.CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Thickness = 1
-MainStroke.Color = Color3.fromRGB(40, 40, 40)
-MainStroke.Transparency = 0.15
+MainStroke.Color = Color3.fromRGB(60, 60, 65)
+MainStroke.Transparency = 0.2
 
 -- HEADER
 local Header = Instance.new("Frame", Main)
-Header.Name = "Header"
-Header.Size = UDim2.new(1, -16, 0, 42)
-Header.Position = UDim2.new(0, 8, 0, 4)
+Header.Size = UDim2.new(1, -20, 0, 46)
+Header.Position = UDim2.new(0, 10, 0, 5)
 Header.BackgroundTransparency = 1
 
 local Title = Instance.new("TextLabel", Header)
@@ -42,28 +40,28 @@ Title.AnchorPoint = Vector2.new(0, 0.5)
 Title.Position = UDim2.new(0, 8, 0.5, 0)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.SourceSansBold
+Title.Font = Enum.Font.GothamBold
 Title.TextSize = 20
-Title.TextColor3 = Color3.fromRGB(240, 240, 240)
+Title.TextColor3 = Color3.fromRGB(230, 230, 240)
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Text = "Card Counter • Advisor"
+Title.Text = "Card Advisor"
 
 local LastUpdateLabel = Instance.new("TextLabel", Header)
 LastUpdateLabel.AnchorPoint = Vector2.new(1, 0.5)
-LastUpdateLabel.Position = UDim2.new(0.99, -28, 0.5, 0)
+LastUpdateLabel.Position = UDim2.new(0.95, 0, 0.5, 0)
 LastUpdateLabel.Size = UDim2.new(0.35, 0, 0.9, 0)
 LastUpdateLabel.BackgroundTransparency = 1
-LastUpdateLabel.Font = Enum.Font.SourceSans
+LastUpdateLabel.Font = Enum.Font.Gotham
 LastUpdateLabel.TextSize = 12
-LastUpdateLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
+LastUpdateLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 LastUpdateLabel.TextXAlignment = Enum.TextXAlignment.Right
 LastUpdateLabel.Text = "idle"
 
 -- BUTTON CONTAINER
 local BtnContainer = Instance.new("Frame", Header)
 BtnContainer.AnchorPoint = Vector2.new(1, 0.5)
-BtnContainer.Position = UDim2.new(0.99, 0, 0.5, 0)
-BtnContainer.Size = UDim2.new(0, 120, 1, 0)
+BtnContainer.Position = UDim2.new(1, -2, 0.5, 0)
+BtnContainer.Size = UDim2.new(0, 130, 1, 0)
 BtnContainer.BackgroundTransparency = 1
 
 local BtnLayout = Instance.new("UIListLayout", BtnContainer)
@@ -71,120 +69,108 @@ BtnLayout.FillDirection = Enum.FillDirection.Horizontal
 BtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 BtnLayout.Padding = UDim.new(0, 6)
 
--- function buat tombol
-local function makeButton(text, sizeX)
+-- Button factory
+local function makeButton(icon, tooltip)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, sizeX or 28, 1, 0)
-	btn.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
-	btn.BorderSizePixel = 0
+	btn.Size = UDim2.new(0, 32, 0, 32)
+	btn.BackgroundColor3 = Color3.fromRGB(36, 38, 45)
 	btn.AutoButtonColor = true
-	btn.Font = Enum.Font.SourceSansBold
-	btn.TextSize = 14
-	btn.TextColor3 = Color3.fromRGB(230, 230, 230)
-	btn.Text = text
-	local c = Instance.new("UICorner", btn)
-	c.CornerRadius = UDim.new(0, 6)
-	local s = Instance.new("UIStroke", btn)
-	s.Transparency = 0.6
-	s.Thickness = 1
+	btn.Text = icon
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 16
+	btn.TextColor3 = Color3.fromRGB(220, 220, 230)
+	btn.Parent = BtnContainer
+
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+	local stroke = Instance.new("UIStroke", btn)
+	stroke.Transparency = 0.5
+	stroke.Thickness = 1
+
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 52, 62)}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(36, 38, 45)}):Play()
+	end)
+
 	return btn
 end
 
-local MinButton = makeButton("—", 32)
-MinButton.Parent = BtnContainer
+-- Buttons
+local PinButton = makeButton("📌", "Pin")
+local MinButton = makeButton("—", "Minimize")
+local RefreshButton = makeButton("↻", "Refresh")
+local CopyButton = makeButton("📋", "Copy")
+local CloseButton = makeButton("✕", "Close")
 
-local SettingsButton = makeButton("⚙", 32)
-SettingsButton.Parent = BtnContainer
-
-local CloseButton = makeButton("✕", 32)
-CloseButton.Parent = BtnContainer
-
--- CONTENT
+-- CONTENT AREA
 local Content = Instance.new("Frame", Main)
 Content.Name = "Content"
-Content.Size = UDim2.new(1, -24, 1, -88)
-Content.Position = UDim2.new(0, 12, 0, 54)
+Content.Size = UDim2.new(1, -20, 1, -90)
+Content.Position = UDim2.new(0, 10, 0, 55)
 Content.BackgroundTransparency = 1
 
--- LEFT PANEL
+-- Panels
 local Left = Instance.new("Frame", Content)
-Left.Size = UDim2.new(0.5, -6, 1, 0)
-Left.Position = UDim2.new(0, 0, 0, 0)
+Left.Size = UDim2.new(0.5, -8, 1, 0)
 Left.BackgroundTransparency = 1
 
--- RIGHT PANEL
 local Right = Instance.new("Frame", Content)
-Right.Size = UDim2.new(0.5, -6, 1, 0)
-Right.Position = UDim2.new(0.5, 6, 0, 0)
+Right.Size = UDim2.new(0.5, -8, 1, 0)
+Right.Position = UDim2.new(0.5, 8, 0, 0)
 Right.BackgroundTransparency = 1
 
--- LABEL CREATOR
-local function makeLabel(parent, title, y)
+-- Label creator
+local function makeLabel(parent, title, order)
+	local y = order * 60
 	local t = Instance.new("TextLabel", parent)
-	t.Size = UDim2.new(1, 0, 0, 22)
+	t.Size = UDim2.new(1, 0, 0, 20)
 	t.Position = UDim2.new(0, 0, 0, y)
 	t.BackgroundTransparency = 1
-	t.Font = Enum.Font.SourceSans
+	t.Font = Enum.Font.Gotham
 	t.TextSize = 13
-	t.TextColor3 = Color3.fromRGB(170, 170, 170)
+	t.TextColor3 = Color3.fromRGB(170, 170, 180)
 	t.TextXAlignment = Enum.TextXAlignment.Left
 	t.Text = title
 
 	local v = Instance.new("TextLabel", parent)
-	v.Size = UDim2.new(1, 0, 0, 28)
+	v.Size = UDim2.new(1, 0, 0, 26)
 	v.Position = UDim2.new(0, 0, 0, y + 20)
 	v.BackgroundTransparency = 1
-	v.Font = Enum.Font.SourceSansBold
+	v.Font = Enum.Font.GothamBold
 	v.TextSize = 16
-	v.TextColor3 = Color3.fromRGB(250, 250, 250)
+	v.TextColor3 = Color3.fromRGB(240, 240, 250)
 	v.TextXAlignment = Enum.TextXAlignment.Left
 	v.Text = "-"
 	return t, v
 end
 
--- LEFT LABELS
+-- Left side labels
 local lblMySumTitle, lblMySum = makeLabel(Left, "My Sum", 0)
-local lblPointsNeededTitle, lblPointsNeeded = makeLabel(Left, "Points Needed", 60)
-local lblSafeChanceTitle, lblSafeChance = makeLabel(Left, "Safe Draw Chance", 120)
+local lblPointsNeededTitle, lblPointsNeeded = makeLabel(Left, "Points Needed", 1)
+local lblSafeChanceTitle, lblSafeChance = makeLabel(Left, "Safe Draw Chance", 2)
 
--- RIGHT LABELS
-local statOpponentTitle, statOpponent = makeLabel(Right, "Opponent (known / hidden)", 0)
-local statDeckTitle, statDeck = makeLabel(Right, "Remaining Deck", 60)
-statDeck.TextYAlignment = Enum.TextYAlignment.Top
-statDeck.RichText = true
-statDeck.TextSize = 14
+-- Right side labels
+local statOpponentTitle, statOpponent = makeLabel(Right, "Opponent (known/hidden)", 0)
+local statDeckTitle, statDeck = makeLabel(Right, "Remaining Deck", 1)
 statDeck.TextWrapped = true
+statDeck.RichText = true
 
 -- FOOTER
 local Footer = Instance.new("Frame", Main)
-Footer.Size = UDim2.new(1, -16, 0, 32)
-Footer.Position = UDim2.new(0, 8, 1, -36)
+Footer.Size = UDim2.new(1, -20, 0, 28)
+Footer.Position = UDim2.new(0, 10, 1, -36)
 Footer.BackgroundTransparency = 1
 
 local FooterText = Instance.new("TextLabel", Footer)
-FooterText.Size = UDim2.new(0.65, 0, 1, 0)
-FooterText.Position = UDim2.new(0, 4, 0, 0)
+FooterText.Size = UDim2.new(1, 0, 1, 0)
 FooterText.BackgroundTransparency = 1
-FooterText.Font = Enum.Font.SourceSans
+FooterText.Font = Enum.Font.Gotham
 FooterText.TextSize = 12
 FooterText.TextColor3 = Color3.fromRGB(150, 150, 150)
 FooterText.TextXAlignment = Enum.TextXAlignment.Left
 FooterText.Text = "Status: ready"
-
-local FooterBtns = Instance.new("Frame", Footer)
-FooterBtns.Size = UDim2.new(0.35, 0, 1, 0)
-FooterBtns.Position = UDim2.new(0.65, 0, 0, 0)
-FooterBtns.BackgroundTransparency = 1
-local fLayout = Instance.new("UIListLayout", FooterBtns)
-fLayout.FillDirection = Enum.FillDirection.Horizontal
-fLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-fLayout.Padding = UDim.new(0, 6)
-
-local RefreshButton = makeButton("↻", 44)
-RefreshButton.Parent = FooterBtns
-
-local CopyButton = makeButton("Copy", 60)
-CopyButton.Parent = FooterBtns
 
 
 local pinned = false
