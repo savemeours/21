@@ -1,0 +1,410 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local VirtualInputManager = nil
+pcall(function() VirtualInputManager = game:GetService("VirtualInputManager") end)
+local VirtualUser = nil
+pcall(function() VirtualUser = game:GetService("VirtualUser") end)
+
+local LocalPlayer = Players.LocalPlayer
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "CardCounterPro"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 280, 0, 200)
+Frame.Position = UDim2.new(0.5, -140, 0.2, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner", Frame)
+UICorner.CornerRadius = UDim.new(0, 12)
+
+local UIStroke = Instance.new("UIStroke", Frame)
+UIStroke.Color = Color3.fromRGB(60, 60, 80)
+UIStroke.Thickness = 2
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -80, 0, 35)
+Title.Position = UDim2.new(0, 15, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "CARD COUNTER PRO"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextColor3 = Color3.fromRGB(220, 220, 255)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Frame
+
+local StatusIndicator = Instance.new("Frame")
+StatusIndicator.Size = UDim2.new(0, 8, 0, 8)
+StatusIndicator.Position = UDim2.new(0, 8, 0, 15)
+StatusIndicator.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+StatusIndicator.BorderSizePixel = 0
+StatusIndicator.Parent = Frame
+local StatusCorner = Instance.new("UICorner", StatusIndicator)
+StatusCorner.CornerRadius = UDim.new(1, 0)
+
+local AutoButton = Instance.new("TextButton")
+AutoButton.Size = UDim2.new(0, 32, 0, 32)
+AutoButton.Position = UDim2.new(1, -72, 0, 8)
+AutoButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+AutoButton.Text = "⚡"
+AutoButton.TextColor3 = Color3.fromRGB(180, 180, 220)
+AutoButton.Font = Enum.Font.GothamBold
+AutoButton.TextSize = 16
+AutoButton.Parent = Frame
+local AutoUICorner = Instance.new("UICorner", AutoButton)
+AutoUICorner.CornerRadius = UDim.new(0, 8)
+local AutoStroke = Instance.new("UIStroke", AutoButton)
+AutoStroke.Color = Color3.fromRGB(80, 80, 110)
+AutoStroke.Thickness = 1
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 32, 0, 32)
+CloseButton.Position = UDim2.new(1, -36, 0, 8)
+CloseButton.BackgroundColor3 = Color3.fromRGB(60, 40, 45)
+CloseButton.Text = "×"
+CloseButton.TextColor3 = Color3.fromRGB(220, 150, 150)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 20
+CloseButton.Parent = Frame
+local CloseUICorner = Instance.new("UICorner", CloseButton)
+CloseUICorner.CornerRadius = UDim.new(0, 8)
+local CloseStroke = Instance.new("UIStroke", CloseButton)
+CloseStroke.Color = Color3.fromRGB(100, 60, 70)
+CloseStroke.Thickness = 1
+
+CloseButton.MouseButton1Click:Connect(function()
+	local tween = TweenService:Create(Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.2, 0)})
+	tween:Play()
+	tween.Completed:Wait()
+	ScreenGui:Destroy()
+	if script then script:Destroy() end
+end)
+
+local DragHandle = Instance.new("Frame")
+DragHandle.Name = "DragHandle"
+DragHandle.Parent = Frame
+DragHandle.Size = UDim2.new(1, 0, 0, 40)
+DragHandle.Position = UDim2.new(0, 0, 0, 0)
+DragHandle.BackgroundTransparency = 1
+DragHandle.ZIndex = 2
+
+local dragging, dragStart, startPos
+DragHandle.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = Frame.Position
+		local connection
+		connection = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+				connection:Disconnect()
+			end
+		end)
+	end
+end)
+DragHandle.InputChanged:Connect(function(input)
+	if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+		local delta = input.Position - dragStart
+		Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+local Recommendation = Instance.new("TextLabel")
+Recommendation.Size = UDim2.new(1, -20, 0, 40)
+Recommendation.Position = UDim2.new(0, 10, 0, 45)
+Recommendation.BackgroundTransparency = 1
+Recommendation.Font = Enum.Font.GothamBlack
+Recommendation.TextSize = 28
+Recommendation.TextColor3 = Color3.fromRGB(255, 255, 255)
+Recommendation.Parent = Frame
+
+local InfoLabel = Instance.new("TextLabel")
+InfoLabel.Size = UDim2.new(1, -20, 1, -95)
+InfoLabel.Position = UDim2.new(0, 10, 0, 90)
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Font = Enum.Font.Gotham
+InfoLabel.TextSize = 14
+InfoLabel.TextColor3 = Color3.fromRGB(180, 180, 220)
+InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
+InfoLabel.TextWrapped = true
+InfoLabel.RichText = true
+InfoLabel.Parent = Frame
+
+local StatsLabel = Instance.new("TextLabel")
+StatsLabel.Size = UDim2.new(1, -20, 0, 20)
+StatsLabel.Position = UDim2.new(0, 10, 1, -25)
+StatsLabel.BackgroundTransparency = 1
+StatsLabel.Font = Enum.Font.Gotham
+StatsLabel.TextSize = 12
+StatsLabel.TextColor3 = Color3.fromRGB(120, 120, 150)
+StatsLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatsLabel.Parent = Frame
+
+local function setAutoAppearance(on)
+	if on then
+		AutoButton.BackgroundColor3 = Color3.fromRGB(40, 120, 80)
+		AutoStroke.Color = Color3.fromRGB(60, 180, 120)
+		AutoButton.TextColor3 = Color3.fromRGB(220, 255, 220)
+	else
+		AutoButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+		AutoStroke.Color = Color3.fromRGB(80, 80, 110)
+		AutoButton.TextColor3 = Color3.fromRGB(180, 180, 220)
+	end
+end
+
+local AutoOn = false
+local AutoLoopThread = nil
+local AutoAvailable = (VirtualInputManager ~= nil) or (VirtualUser ~= nil)
+local LastActionTime = 0
+local ActionCooldown = 1.2
+
+local function performDoubleClick(clickType)
+	local currentTime = tick()
+	if currentTime - LastActionTime < ActionCooldown then return end
+	
+	local camera = workspace.CurrentCamera
+	if not camera then return end
+	
+	local vx = camera.ViewportSize.X / 2
+	local vy = camera.ViewportSize.Y / 2
+
+	local function doClick(button)
+		if button == 0 then
+			if VirtualInputManager then
+				VirtualInputManager:SendMouseButtonEvent(vx, vy, 0, true, game, 1)
+				task.wait(0.02)
+				VirtualInputManager:SendMouseButtonEvent(vx, vy, 0, false, game, 1)
+			elseif VirtualUser then
+				VirtualUser:CaptureController()
+				VirtualUser:Button1Down(Vector2.new(vx, vy))
+				task.wait(0.02)
+				VirtualUser:Button1Up(Vector2.new(vx, vy))
+			end
+		else
+			if VirtualInputManager then
+				VirtualInputManager:SendMouseButtonEvent(vx, vy, 1, true, game, 1)
+				task.wait(0.02)
+				VirtualInputManager:SendMouseButtonEvent(vx, vy, 1, false, game, 1)
+			elseif VirtualUser and VirtualUser.Button2Down then
+				VirtualUser:CaptureController()
+				VirtualUser:Button2Down(Vector2.new(vx, vy))
+				task.wait(0.02)
+				VirtualUser:Button2Up(Vector2.new(vx, vy))
+			end
+		end
+	end
+
+	doClick(clickType)
+	task.wait(0.1)
+	doClick(clickType)
+	
+	LastActionTime = currentTime
+end
+
+local function startAutoLoop()
+	if AutoLoopThread then return end
+	AutoLoopThread = task.spawn(function()
+		while AutoOn and ScreenGui.Parent do
+			local rec = ""
+			pcall(function() rec = (Recommendation.Text or ""):upper() end)
+
+			if rec:find("TAKE") then
+				performDoubleClick(0)
+			elseif rec:find("HOLD") then
+				performDoubleClick(1)
+			end
+
+			task.wait(1.5)
+		end
+		AutoLoopThread = nil
+	end)
+end
+
+local function stopAutoLoop()
+	AutoOn = false
+end
+
+AutoButton.MouseButton1Click:Connect(function()
+	if not AutoAvailable then
+		local originalColor = AutoButton.BackgroundColor3
+		AutoButton.BackgroundColor3 = Color3.fromRGB(120, 50, 60)
+		task.delay(0.5, function()
+			if AutoButton then
+				AutoButton.BackgroundColor3 = originalColor
+			end
+		end)
+		return
+	end
+
+	AutoOn = not AutoOn
+	setAutoAppearance(AutoOn)
+	if AutoOn then
+		startAutoLoop()
+	else
+		stopAutoLoop()
+	end
+end)
+
+local UpdateCount = 0
+local StartTime = tick()
+
+local function updateAdvisor()
+	UpdateCount += 1
+	
+	local cardsContainer = workspace.Room and workspace.Room:FindFirstChild("Cards")
+	local opponentRoot = workspace.Room and workspace.Room.Opponent and workspace.Room.Opponent:FindFirstChild("HumanoidRootPart")
+	local myCamera = workspace.Room and workspace.Room:FindFirstChild("Camera")
+
+	local goalValue
+	do
+		local sumLabel = workspace.Room
+			and workspace.Room.Main
+			and workspace.Room.Main:FindFirstChild("YourCardsSum")
+			and workspace.Room.Main.YourCardsSum:FindFirstChild("SurfaceGui")
+			and workspace.Room.Main.YourCardsSum.SurfaceGui:FindFirstChild("TextLabel")
+		if sumLabel and sumLabel:IsA("TextLabel") then
+			goalValue = tonumber((sumLabel.Text or ""):match("%d+/(%d+)"))
+		end
+	end
+
+	if not (cardsContainer and opponentRoot and myCamera and goalValue) then
+		StatusIndicator.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+		Recommendation.Text = "WAITING"
+		Recommendation.TextColor3 = Color3.fromRGB(255, 200, 50)
+		InfoLabel.Text = "Waiting for game initialization..."
+		return
+	end
+
+	local myCards, opponentCards = {}, {}
+	for _, obj in ipairs(cardsContainer:GetChildren()) do
+		if obj.Name == "Card" and obj:IsA("BasePart") then
+			local scoreLabel = obj:FindFirstChild("Score") and obj.Score:FindFirstChild("TextLabel")
+			local faceValue = scoreLabel and scoreLabel.Text or "[Hidden]"
+			local distToOpponent = (obj.Position - opponentRoot.Position).Magnitude
+			local distToMe = (obj.Position - myCamera.Position).Magnitude
+			local owner = (distToOpponent < distToMe) and "Opponent" or "Me"
+			if owner == "Me" then
+				table.insert(myCards, faceValue)
+			else
+				table.insert(opponentCards, faceValue)
+			end
+		end
+	end
+
+	local function cardValue(v)
+		if v == "L" then return 99 end
+		return tonumber(v)
+	end
+
+	local mySum = 0
+	for _, v in ipairs(myCards) do
+		local n = cardValue(v)
+		if n then mySum = mySum + n end
+	end
+
+	local oppKnownSum, oppHiddenCount = 0, 0
+	for _, v in ipairs(opponentCards) do
+		local n = cardValue(v)
+		if n then
+			oppKnownSum = oppKnownSum + n
+		else
+			oppHiddenCount = oppHiddenCount + 1
+		end
+	end
+
+	local deck = {1,2,3,4,5,6,7,8,9,10,11}
+	local visibleCards = {}
+	for _, v in ipairs(myCards) do
+		local n = tonumber(v)
+		if n then table.insert(visibleCards, n) end
+	end
+	for _, v in ipairs(opponentCards) do
+		local n = tonumber(v)
+		if n then table.insert(visibleCards, n) end
+	end
+	for _, cardValue in ipairs(visibleCards) do
+		for i, deckCard in ipairs(deck) do
+			if deckCard == cardValue then
+				table.remove(deck, i)
+				break
+			end
+		end
+	end
+
+	local safeDraws, bustDraws = 0, 0
+	for _, value in ipairs(deck) do
+		if mySum + value <= goalValue then
+			safeDraws += 1
+		else
+			bustDraws += 1
+		end
+	end
+	local totalRemaining = safeDraws + bustDraws
+	local safeChance = (totalRemaining > 0) and (safeDraws / totalRemaining) or 0
+
+	local sumOfDeck = 0
+	for _, v in ipairs(deck) do sumOfDeck += v end
+	local avgDeckValue = (totalRemaining > 0) and (sumOfDeck / totalRemaining) or 0
+	local oppExpectedSum = oppKnownSum + (oppHiddenCount * avgDeckValue)
+
+	local pointsNeeded = goalValue - mySum
+	local opponentBust = oppKnownSum > goalValue
+
+	local requiredSafeChance = 0.50
+	local opponentAdvantage = math.max(0, oppExpectedSum - mySum)
+	requiredSafeChance = requiredSafeChance - (opponentAdvantage * 0.05)
+	requiredSafeChance = math.max(0.40, requiredSafeChance)
+
+	if opponentBust then
+		StatusIndicator.BackgroundColor3 = Color3.fromRGB(200, 50, 80)
+		Recommendation.Text = "HOLD"
+		Recommendation.TextColor3 = Color3.fromRGB(220, 80, 100)
+	elseif (1 - safeChance) >= 0.5 and oppExpectedSum <= mySum then
+		StatusIndicator.BackgroundColor3 = Color3.fromRGB(200, 50, 80)
+		Recommendation.Text = "HOLD"
+		Recommendation.TextColor3 = Color3.fromRGB(220, 80, 100)
+	elseif safeChance >= requiredSafeChance then
+		StatusIndicator.BackgroundColor3 = Color3.fromRGB(50, 200, 80)
+		Recommendation.Text = "TAKE"
+		Recommendation.TextColor3 = Color3.fromRGB(80, 220, 120)
+	else
+		StatusIndicator.BackgroundColor3 = Color3.fromRGB(200, 50, 80)
+		Recommendation.Text = "HOLD"
+		Recommendation.TextColor3 = Color3.fromRGB(220, 80, 100)
+	end
+
+	local deckText = ""
+	for i, card in ipairs(deck) do
+		local color = (mySum + card <= goalValue) and "<font color='#32C832'>" or "<font color='#C83232'>"
+		deckText = deckText .. color .. card .. "</font>"
+		if i < #deck then deckText = deckText .. ", " end
+	end
+
+	local uptime = math.floor(tick() - StartTime)
+	local fps = math.floor(UpdateCount / uptime) if uptime > 0 else 0
+	
+	InfoLabel.Text = string.format(
+		"<b>Safe Chance:</b> <font color='%s'>%.1f%%</font>\n<b>Points Needed:</b> %d\n<b>Opponent Expected:</b> %.1f\n<b>Remaining Cards:</b> %s",
+		safeChance >= 0.5 and "#32C832" or "#C83232",
+		safeChance*100,
+		pointsNeeded,
+		oppExpectedSum,
+		deckText
+	)
+	
+	StatsLabel.Text = string.format("Updates: %d | FPS: %d | Uptime: %ds", UpdateCount, fps, uptime)
+end
+
+RunService.RenderStepped:Connect(updateAdvisor)
