@@ -5,41 +5,45 @@ local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 
+-- GUI Root
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "CardCounter"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
 
+-- MAIN CONTAINER
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 320, 0, 180)
-Main.Position = UDim2.new(0.5, -160, 0.18, 0)
+Main.Size = UDim2.new(0, 420, 0, 240) -- lebih besar
+Main.Position = UDim2.new(0.5, -210, 0.18, 0)
 Main.AnchorPoint = Vector2.new(0.5, 0)
-Main.BackgroundTransparency = 0
 Main.BackgroundColor3 = Color3.fromRGB(22, 24, 26)
 Main.BorderSizePixel = 0
 Main.Parent = ScreenGui
+
 local MainCorner = Instance.new("UICorner", Main)
-MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.CornerRadius = UDim.new(0, 12)
+
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Thickness = 1
 MainStroke.Color = Color3.fromRGB(40, 40, 40)
 MainStroke.Transparency = 0.15
 
+-- HEADER
 local Header = Instance.new("Frame", Main)
 Header.Name = "Header"
-Header.Size = UDim2.new(1, 0, 0, 36)
-Header.Position = UDim2.new(0, 0, 0, 0)
+Header.Size = UDim2.new(1, -16, 0, 42)
+Header.Position = UDim2.new(0, 8, 0, 4)
 Header.BackgroundTransparency = 1
 
 local Title = Instance.new("TextLabel", Header)
 Title.AnchorPoint = Vector2.new(0, 0.5)
-Title.Position = UDim2.new(0, 12, 0.5, 0)
-Title.Size = UDim2.new(0.6, 0, 0.9, 0)
+Title.Position = UDim2.new(0, 8, 0.5, 0)
+Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 18
+Title.TextSize = 20
 Title.TextColor3 = Color3.fromRGB(240, 240, 240)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Text = "Card Counter • Advisor"
@@ -47,7 +51,7 @@ Title.Text = "Card Counter • Advisor"
 local LastUpdateLabel = Instance.new("TextLabel", Header)
 LastUpdateLabel.AnchorPoint = Vector2.new(1, 0.5)
 LastUpdateLabel.Position = UDim2.new(0.99, -28, 0.5, 0)
-LastUpdateLabel.Size = UDim2.new(0.42, 0, 0.9, 0)
+LastUpdateLabel.Size = UDim2.new(0.35, 0, 0.9, 0)
 LastUpdateLabel.BackgroundTransparency = 1
 LastUpdateLabel.Font = Enum.Font.SourceSans
 LastUpdateLabel.TextSize = 12
@@ -55,16 +59,19 @@ LastUpdateLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
 LastUpdateLabel.TextXAlignment = Enum.TextXAlignment.Right
 LastUpdateLabel.Text = "idle"
 
+-- BUTTON CONTAINER
 local BtnContainer = Instance.new("Frame", Header)
 BtnContainer.AnchorPoint = Vector2.new(1, 0.5)
-BtnContainer.Position = UDim2.new(0.99, -8, 0.5, 0)
-BtnContainer.Size = UDim2.new(0, 84, 0.9, 0)
+BtnContainer.Position = UDim2.new(0.99, 0, 0.5, 0)
+BtnContainer.Size = UDim2.new(0, 120, 1, 0)
 BtnContainer.BackgroundTransparency = 1
+
 local BtnLayout = Instance.new("UIListLayout", BtnContainer)
 BtnLayout.FillDirection = Enum.FillDirection.Horizontal
 BtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 BtnLayout.Padding = UDim.new(0, 6)
 
+-- function buat tombol
 local function makeButton(text, sizeX)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0, sizeX or 28, 1, 0)
@@ -76,36 +83,42 @@ local function makeButton(text, sizeX)
 	btn.TextColor3 = Color3.fromRGB(230, 230, 230)
 	btn.Text = text
 	local c = Instance.new("UICorner", btn)
-	c.CornerRadius = UDim.new(0,6)
+	c.CornerRadius = UDim.new(0, 6)
 	local s = Instance.new("UIStroke", btn)
 	s.Transparency = 0.6
 	s.Thickness = 1
 	return btn
 end
 
-local MinButton = makeButton("—", 28)
+local MinButton = makeButton("—", 32)
 MinButton.Parent = BtnContainer
-local SettingsButton = makeButton("⚙", 28)
+
+local SettingsButton = makeButton("⚙", 32)
 SettingsButton.Parent = BtnContainer
-local CloseButton = makeButton("✕", 28)
+
+local CloseButton = makeButton("✕", 32)
 CloseButton.Parent = BtnContainer
 
+-- CONTENT
 local Content = Instance.new("Frame", Main)
 Content.Name = "Content"
-Content.Size = UDim2.new(1, -16, 1, -56)
-Content.Position = UDim2.new(0, 8, 0, 40)
+Content.Size = UDim2.new(1, -24, 1, -88)
+Content.Position = UDim2.new(0, 12, 0, 54)
 Content.BackgroundTransparency = 1
 
+-- LEFT PANEL
 local Left = Instance.new("Frame", Content)
-Left.Size = UDim2.new(0.45, -6, 1, 0)
+Left.Size = UDim2.new(0.5, -6, 1, 0)
 Left.Position = UDim2.new(0, 0, 0, 0)
 Left.BackgroundTransparency = 1
 
+-- RIGHT PANEL
 local Right = Instance.new("Frame", Content)
-Right.Size = UDim2.new(0.55, 0, 1, 0)
-Right.Position = UDim2.new(0.45, 8, 0, 0)
+Right.Size = UDim2.new(0.5, -6, 1, 0)
+Right.Position = UDim2.new(0.5, 6, 0, 0)
 Right.BackgroundTransparency = 1
 
+-- LABEL CREATOR
 local function makeLabel(parent, title, y)
 	local t = Instance.new("TextLabel", parent)
 	t.Size = UDim2.new(1, 0, 0, 22)
@@ -113,141 +126,66 @@ local function makeLabel(parent, title, y)
 	t.BackgroundTransparency = 1
 	t.Font = Enum.Font.SourceSans
 	t.TextSize = 13
-	t.TextColor3 = Color3.fromRGB(170,170,170)
+	t.TextColor3 = Color3.fromRGB(170, 170, 170)
 	t.TextXAlignment = Enum.TextXAlignment.Left
 	t.Text = title
+
 	local v = Instance.new("TextLabel", parent)
-	v.Size = UDim2.new(1, 0, 0, 26)
-	v.Position = UDim2.new(0, 0, 0, y + 22)
+	v.Size = UDim2.new(1, 0, 0, 28)
+	v.Position = UDim2.new(0, 0, 0, y + 20)
 	v.BackgroundTransparency = 1
 	v.Font = Enum.Font.SourceSansBold
 	v.TextSize = 16
-	v.TextColor3 = Color3.fromRGB(250,250,250)
+	v.TextColor3 = Color3.fromRGB(250, 250, 250)
 	v.TextXAlignment = Enum.TextXAlignment.Left
 	v.Text = "-"
 	return t, v
 end
 
+-- LEFT LABELS
 local lblMySumTitle, lblMySum = makeLabel(Left, "My Sum", 0)
-local lblPointsNeededTitle, lblPointsNeeded = makeLabel(Left, "Points Needed", 54)
-local lblSafeChanceTitle, lblSafeChance = makeLabel(Left, "Safe Draw Chance", 108)
+local lblPointsNeededTitle, lblPointsNeeded = makeLabel(Left, "Points Needed", 60)
+local lblSafeChanceTitle, lblSafeChance = makeLabel(Left, "Safe Draw Chance", 120)
 
-local statOpponentTitle = Instance.new("TextLabel", Right)
-statOpponentTitle.Size = UDim2.new(1, 0, 0, 22)
-statOpponentTitle.Position = UDim2.new(0, 0, 0, 0)
-statOpponentTitle.BackgroundTransparency = 1
-statOpponentTitle.Font = Enum.Font.SourceSans
-statOpponentTitle.TextSize = 13
-statOpponentTitle.TextColor3 = Color3.fromRGB(170,170,170)
-statOpponentTitle.TextXAlignment = Enum.TextXAlignment.Left
-statOpponentTitle.Text = "Opponent (known / hidden)"
-local statOpponent = Instance.new("TextLabel", Right)
-statOpponent.Size = UDim2.new(1, 0, 0, 26)
-statOpponent.Position = UDim2.new(0, 0, 0, 22)
-statOpponent.BackgroundTransparency = 1
-statOpponent.Font = Enum.Font.SourceSansBold
-statOpponent.TextSize = 16
-statOpponent.TextColor3 = Color3.fromRGB(250,250,250)
-statOpponent.TextXAlignment = Enum.TextXAlignment.Left
-statOpponent.Text = "-"
-
-local statDeckTitle = Instance.new("TextLabel", Right)
-statDeckTitle.Size = UDim2.new(1, 0, 0, 22)
-statDeckTitle.Position = UDim2.new(0, 0, 0, 60)
-statDeckTitle.BackgroundTransparency = 1
-statDeckTitle.Font = Enum.Font.SourceSans
-statDeckTitle.TextSize = 13
-statDeckTitle.TextColor3 = Color3.fromRGB(170,170,170)
-statDeckTitle.TextXAlignment = Enum.TextXAlignment.Left
-statDeckTitle.Text = "Remaining Deck"
-local statDeck = Instance.new("TextLabel", Right)
-statDeck.Size = UDim2.new(1, 0, 1, -86)
-statDeck.Position = UDim2.new(0, 0, 0, 82)
-statDeck.BackgroundTransparency = 1
-statDeck.RichText = true
-statDeck.Font = Enum.Font.SourceSansBold
-statDeck.TextSize = 14
-statDeck.TextColor3 = Color3.fromRGB(230,230,230)
-statDeck.TextXAlignment = Enum.TextXAlignment.Left
+-- RIGHT LABELS
+local statOpponentTitle, statOpponent = makeLabel(Right, "Opponent (known / hidden)", 0)
+local statDeckTitle, statDeck = makeLabel(Right, "Remaining Deck", 60)
 statDeck.TextYAlignment = Enum.TextYAlignment.Top
+statDeck.RichText = true
+statDeck.TextSize = 14
 statDeck.TextWrapped = true
-statDeck.Text = "-"
 
+-- FOOTER
 local Footer = Instance.new("Frame", Main)
-Footer.Size = UDim2.new(1, 0, 0, 28)
-Footer.Position = UDim2.new(0, 0, 1, -28)
+Footer.Size = UDim2.new(1, -16, 0, 32)
+Footer.Position = UDim2.new(0, 8, 1, -36)
 Footer.BackgroundTransparency = 1
 
 local FooterText = Instance.new("TextLabel", Footer)
-FooterText.Size = UDim2.new(1, -120, 1, 0)
-FooterText.Position = UDim2.new(0, 12, 0, 0)
+FooterText.Size = UDim2.new(0.65, 0, 1, 0)
+FooterText.Position = UDim2.new(0, 4, 0, 0)
 FooterText.BackgroundTransparency = 1
 FooterText.Font = Enum.Font.SourceSans
 FooterText.TextSize = 12
-FooterText.TextColor3 = Color3.fromRGB(150,150,150)
+FooterText.TextColor3 = Color3.fromRGB(150, 150, 150)
 FooterText.TextXAlignment = Enum.TextXAlignment.Left
 FooterText.Text = "Status: ready"
 
+local FooterBtns = Instance.new("Frame", Footer)
+FooterBtns.Size = UDim2.new(0.35, 0, 1, 0)
+FooterBtns.Position = UDim2.new(0.65, 0, 0, 0)
+FooterBtns.BackgroundTransparency = 1
+local fLayout = Instance.new("UIListLayout", FooterBtns)
+fLayout.FillDirection = Enum.FillDirection.Horizontal
+fLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+fLayout.Padding = UDim.new(0, 6)
+
 local RefreshButton = makeButton("↻", 44)
-RefreshButton.Parent = Footer
-RefreshButton.Position = UDim2.new(1, -108, 0, 0)
-RefreshButton.AnchorPoint = Vector2.new(1,0)
-RefreshButton.Parent = Footer
+RefreshButton.Parent = FooterBtns
 
-local CopyButton = makeButton("Copy", 52)
-CopyButton.Parent = Footer
-CopyButton.Position = UDim2.new(1, -56, 0, 0)
-CopyButton.AnchorPoint = Vector2.new(1,0)
+local CopyButton = makeButton("Copy", 60)
+CopyButton.Parent = FooterBtns
 
-local SettingsPanel = Instance.new("Frame", Main)
-SettingsPanel.Name = "SettingsPanel"
-SettingsPanel.Size = UDim2.new(0.9, 0, 0, 120)
-SettingsPanel.Position = UDim2.new(0.05, 0, 1, 8)
-SettingsPanel.BackgroundColor3 = Color3.fromRGB(28,28,30)
-SettingsPanel.BorderSizePixel = 0
-SettingsPanel.Visible = false
-local SettingsCorner = Instance.new("UICorner", SettingsPanel)
-SettingsCorner.CornerRadius = UDim.new(0,8)
-local SettingsLayout = Instance.new("UIListLayout", SettingsPanel)
-SettingsLayout.Padding = UDim.new(0,8)
-SettingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-SettingsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-SettingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-local OpacityFrame = Instance.new("Frame", SettingsPanel)
-OpacityFrame.Size = UDim2.new(1, -12, 0, 28)
-OpacityFrame.Position = UDim2.new(0, 8, 0, 8)
-OpacityFrame.BackgroundTransparency = 1
-local OpacityLabel = Instance.new("TextLabel", OpacityFrame)
-OpacityLabel.Size = UDim2.new(0.4, 0, 1, 0)
-OpacityLabel.Position = UDim2.new(0, 0, 0, 0)
-OpacityLabel.BackgroundTransparency = 1
-OpacityLabel.Font = Enum.Font.SourceSans
-OpacityLabel.TextSize = 13
-OpacityLabel.TextColor3 = Color3.fromRGB(180,180,180)
-OpacityLabel.Text = "Opacity"
-local OpacityValue = Instance.new("TextLabel", OpacityFrame)
-OpacityValue.Size = UDim2.new(0.2, 0, 1, 0)
-OpacityValue.Position = UDim2.new(0.8, 0, 0, 0)
-OpacityValue.BackgroundTransparency = 1
-OpacityValue.Font = Enum.Font.SourceSansBold
-OpacityValue.TextSize = 13
-OpacityValue.TextColor3 = Color3.fromRGB(220,220,220)
-OpacityValue.Text = "100%"
-
-local SliderBar = Instance.new("Frame", OpacityFrame)
-SliderBar.Size = UDim2.new(0.55, 0, 0.36, 0)
-SliderBar.Position = UDim2.new(0.42, 0, 0.32, 0)
-SliderBar.BackgroundColor3 = Color3.fromRGB(40,40,42)
-SliderBar.BorderSizePixel = 0
-local SliderCorner = Instance.new("UICorner", SliderBar)
-SliderCorner.CornerRadius = UDim.new(0,6)
-local SliderHandle = Instance.new("Frame", SliderBar)
-SliderHandle.Size = UDim2.new(0, 14, 1, 0)
-SliderHandle.Position = UDim2.new(1, -14, 0, 0)
-SliderHandle.BackgroundColor3 = Color3.fromRGB(200,200,200)
-local HandleCorner = Instance.new("UICorner", SliderHandle)
-HandleCorner.CornerRadius = UDim.new(0,6)
 
 local pinned = false
 local dragging, dragStart, startPos
